@@ -130,7 +130,7 @@ function App() {
   };
 
   const latestMessage = getLatestMessage();
-  const latestPrompt = getLatestOptimizedPrompt();
+  // const latestPrompt = getLatestOptimizedPrompt();
 
   return (
     <div className="app">
