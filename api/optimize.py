@@ -25,7 +25,7 @@ if not logger.hasHandlers():
     logger.addHandler(handler)
 
 # Initialize Pinecone (commented out due to version compatibility)
-pc = pinecone.Pinecone(api_key=os.getenv('PINECONE'))
+pc = pinecone.Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
 
 # Create index if not exists
 index_name = "prompt-technique2"
