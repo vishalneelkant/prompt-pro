@@ -4,7 +4,6 @@ from flask_cors import CORS
 import os
 import pinecone
 import re
-import traceback
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_pinecone import PineconeVectorStore
@@ -124,7 +123,12 @@ try:
         # Try initializing vectorstore
         try:
             logger.info("Initializing Pinecone vectorstore...")
-            vectorstore = PineconeVectorStore.from_texts(
+            vectorstore_from_docs = PineconeVectorStore.from_documents(
+                    docs,
+                    index_name=index_name,
+                    embedding=embeddings
+            )
+            vectorstore = vectorstore_from_docs.from_texts(
                 texts=docs,
                 embedding=embeddings,
                 index_name=index_name
@@ -134,13 +138,11 @@ try:
             logger.info("Retriever initialized successfully.")
         except Exception as e:
             logger.error(f"Error during PineconeVectorStore.from_texts: {e}")
-            logger.error(traceback.format_exc())
             raise
     else:
         logger.warning("Pinecone client not available. Skipping vectorstore and retriever initialization.")
 except Exception as e:
     logger.error(f"Vectorstore or retriever initialization failed: {e}")
-    logger.error(traceback.format_exc())
     logger.info("Using fallback strategy selection")
     logger.info("Using fallback strategy selection (no vectorstore)")
     retriever = None
