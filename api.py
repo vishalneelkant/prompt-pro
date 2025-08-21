@@ -293,11 +293,11 @@ def apply_strategy(user_prompt: str, context: str = "general"):
                 "optimized": fallback_prompt
             }
 
-@app.route('/health', methods=['GET'])
+@app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({"status": "healthy", "message": "Prompt Optimizer API is running"})
 
-@app.route('/optimize', methods=['POST'])
+@app.route('/api/optimize', methods=['POST'])
 def optimize_prompt():
     try:
         data = request.get_json()
@@ -318,7 +318,7 @@ def optimize_prompt():
         print(f"Error optimizing prompt: {e}")
         return jsonify({"error": "Failed to optimize prompt"}), 500
 
-@app.route('/strategies', methods=['GET'])
+@app.route('/api/strategies', methods=['GET'])
 def get_strategies():
     """Get available strategies and contexts"""
     return jsonify({
