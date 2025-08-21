@@ -1,0 +1,15 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+node_modules/
+*.log
+*.sqlite3
+*.db
+*.bak
+*.swp
+*.swo
+.idea/
+.vscode/
+public/
