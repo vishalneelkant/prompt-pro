@@ -108,15 +108,32 @@ vectorstore = None
 retriever = None
 try:
     if pc:
-        logger.info("Initializing Pinecone vectorstore...")
-        vectorstore = PineconeVectorStore.from_texts(
-            texts=docs,
-            embedding=embeddings,
-            index_name=index_name
-        )
-        logger.info("Pinecone vectorstore initialized successfully.")
-        retriever = vectorstore.as_retriever()
-        logger.info("Retriever initialized successfully.")
+        logger.info(f"Preparing to initialize Pinecone vectorstore with index_name='{index_name}' and docs count={len(docs)}.")
+        logger.info(f"Embedding model: {embeddings}")
+        # Check if index exists before using
+        try:
+            index_list = pc.list_indexes()
+            logger.info(f"Index list before vectorstore init: {index_list}")
+            if index_name not in [i["name"] for i in index_list]:
+                logger.error(f"Index '{index_name}' does not exist before vectorstore init. Aborting vectorstore creation.")
+                raise FileNotFoundError(f"Pinecone index '{index_name}' not found.")
+        except Exception as e:
+            logger.error(f"Error checking Pinecone index existence before vectorstore init: {e}")
+            raise
+        # Try initializing vectorstore
+        try:
+            logger.info("Initializing Pinecone vectorstore...")
+            vectorstore = PineconeVectorStore.from_texts(
+                texts=docs,
+                embedding=embeddings,
+                index_name=index_name
+            )
+            logger.info("Pinecone vectorstore initialized successfully.")
+            retriever = vectorstore.as_retriever()
+            logger.info("Retriever initialized successfully.")
+        except Exception as e:
+            logger.error(f"Error during PineconeVectorStore.from_texts: {e}")
+            raise
     else:
         logger.warning("Pinecone client not available. Skipping vectorstore and retriever initialization.")
 except Exception as e:
