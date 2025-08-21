@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+import logging
 from flask_cors import CORS
 import os
 import pinecone
@@ -10,8 +11,18 @@ from langchain_pinecone import PineconeVectorStore
 # Load environment variables
 load_dotenv()
 
+
 app = Flask(__name__)
 CORS(app)
+
+# Setup logger
+logger = logging.getLogger("prompt_optimizer")
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
+handler.setFormatter(formatter)
+if not logger.hasHandlers():
+    logger.addHandler(handler)
 
 # Initialize Pinecone (commented out due to version compatibility)
 pc = pinecone.Pinecone(api_key=os.getenv('PINECONE'))
@@ -30,9 +41,9 @@ try:
             )
         )
 except Exception as e:
-    print(f"⚠️  Pinecone connection failed: {e}")
-    print("📝 Using fallback strategies...")
-    print("⚠️  Pinecone disabled due to version compatibility - using fallback strategies...")
+    logger.error(f"Pinecone connection failed: {e}")
+    logger.info("Using fallback strategies...")
+    logger.warning("Pinecone disabled due to version compatibility - using fallback strategies...")
 
 # Fallback strategies if Pinecone is unavailable
 docs = [
@@ -85,9 +96,9 @@ try:
     retriever = vectorstore.as_retriever()
     print("✅ Pinecone vectorstore initialized successfully")
 except Exception as e:
-    print(f"⚠️  Vectorstore initialization failed: {e}")
-    print("📝 Using fallback strategy selection")
-    print("📝 Using fallback strategy selection (no vectorstore)")
+    logger.error(f"Vectorstore initialization failed: {e}")
+    logger.info("Using fallback strategy selection")
+    logger.info("Using fallback strategy selection (no vectorstore)")
     retriever = None
 
 def clean_prompt(prompt: str) -> str:
@@ -303,19 +314,23 @@ def optimize_prompt():
         data = request.get_json()
         user_prompt = data.get('prompt', '')
         context = data.get('context', 'general')
+        logger.info(f"Received optimize request: prompt='{user_prompt}', context='{context}'")
         
         if not user_prompt:
+            logger.warning("Prompt is required but missing in request.")
             return jsonify({"error": "Prompt is required"}), 400
         
         # Validate context
         if context not in context_strategies:
+            logger.info(f"Context '{context}' not recognized. Defaulting to 'general'.")
             context = "general"
         
         result = apply_strategy(user_prompt, context)
+        logger.info(f"Optimization result: {result}")
         return jsonify(result)
         
     except Exception as e:
-        print(f"Error optimizing prompt: {e}")
+        logger.error(f"Error optimizing prompt: {e}", exc_info=True)
         return jsonify({"error": "Failed to optimize prompt"}), 500
 
 @app.route('/api/strategies', methods=['GET'])
@@ -327,13 +342,13 @@ def get_strategies():
     })
 
 
-# Vercel Python Function handler
-def handler(environ, start_response):
-    from werkzeug.middleware.dispatcher import DispatcherMiddleware
-    application = DispatcherMiddleware(app)
-    return application(environ, start_response)
+# # Vercel Python Function handler
+# def handler(environ, start_response):
+#     from werkzeug.middleware.dispatcher import DispatcherMiddleware
+#     application = DispatcherMiddleware(app)
+#     return application(environ, start_response)
 
 
 # Local development entry point
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run()

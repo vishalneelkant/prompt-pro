@@ -34,7 +34,7 @@ function App() {
 
     try {
       // Use relative path for Vercel and local
-      const apiBase = process.env.REACT_APP_API_BASE_URL || window.location.origin;
+      //const apiBase = process.env.REACT_APP_API_BASE_URL || window.location.origin;
       const response = await axios.post('/api/optimize', {
         prompt: inputValue,
         context: context
