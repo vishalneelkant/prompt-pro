@@ -6,3 +6,4 @@ langchain
 langchain-openai
 langchain-pinecone
 openai
+werkzeug

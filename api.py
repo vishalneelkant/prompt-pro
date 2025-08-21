@@ -326,8 +326,14 @@ def get_strategies():
         "strategies": docs
     })
 
-if __name__ == '__main__':
-    print("🚀 Starting Prompt Optimizer API...")
-    print(f"📝 Available strategies: {len(docs)}")
-    print(f"🌐 API will be available at: http://localhost:5000")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+
+# Vercel Python Function handler
+def handler(environ, start_response):
+    from werkzeug.middleware.dispatcher import DispatcherMiddleware
+    application = DispatcherMiddleware(app)
+    return application(environ, start_response)
+
+
+# Local development entry point
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
