@@ -7,6 +7,7 @@ import re
 from dotenv import load_dotenv
 import sys
 import traceback
+import builtins
 
 # Load environment variables
 load_dotenv()
@@ -433,6 +434,31 @@ def get_strategies():
         "contexts": list(context_strategies.keys()),
         "strategies": docs
     })
+
+
+# Diagnostic wrapper: intercept issubclass calls to log offending non-class first args
+if not getattr(builtins, '_issubclass_wrapped_for_diagnostics', False):
+    _orig_issubclass = builtins.issubclass
+    def _diagnostic_issubclass(cls, classinfo):
+        try:
+            return _orig_issubclass(cls, classinfo)
+        except TypeError as te:
+            try:
+                logger.error("issubclass() raised TypeError — logging diagnostic info", exc_info=True)
+                # Log the exact type and a safe repr of the first argument
+                try:
+                    arg_type = type(cls)
+                    arg_repr = repr(cls)
+                except Exception:
+                    arg_type = 'unrepresentable'
+                    arg_repr = '<unrepresentable>'
+                logger.error(f"Offending issubclass first-arg type: {arg_type}; value repr (truncated): {arg_repr[:1000]}")
+            except Exception:
+                pass
+            # Re-raise the original error to keep behavior unchanged
+            raise
+    builtins.issubclass = _diagnostic_issubclass
+    builtins._issubclass_wrapped_for_diagnostics = True
 
 
 # # Vercel Python Function handler
