@@ -63,14 +63,11 @@ except Exception as e:
 
 # Fallback strategies if Pinecone is unavailable
 docs = [
-    # General LLM Prompting
     "Few-shot prompting: Provide a few input-output examples before the actual query to guide the model.",
     "Chain-of-thought prompting: Ask the model to reason step by step before answering.",
     "Zero-shot prompting: Directly ask the model without giving examples.",
     "Role prompting: Assign a role to the model, e.g., 'You are an expert teacher...'.",
     "Self-consistency prompting: Sample multiple reasoning paths and pick the most consistent answer.",
-
-    # World-Class Image Generation Prompting
     "Intent Understanding: Analyze user's core desire, emotional goal, and intended use case to create contextually perfect prompts.",
     "Subject Mastery: Begin with crystal-clear subject definition, then layer with specific attributes, characteristics, and unique features.",
     "Composition Excellence: Specify camera angles, framing, perspective, depth of field, and visual hierarchy for professional composition.",
@@ -82,8 +79,7 @@ docs = [
     "Color Harmony: Define color palette, contrast, saturation, color theory, and visual harmony principles.",
     "Negative Space Control: Specify what to avoid, exclude, or minimize for clean, focused image generation.",
     "Reference Integration: Incorporate specific artistic references, photography styles, cinematic techniques, and visual inspirations.",
-    "Iterative Refinement: Structure prompts for easy modification, allowing users to adjust specific elements while maintaining core vision.",
-
+    "Iterative Refinement: Structure prompts for easy modification, allowing users to adjust specific elements while maintaining core vision."
 ]
 
 # Context-specific strategy mappings
@@ -120,21 +116,22 @@ try:
         # Try initializing vectorstore
         try:
             logger.info("Initializing Pinecone vectorstore...")
-            vectorstore = PineconeVectorStore.from_documents(
-                    docs,
-                    index_name=index_name,
-                    embedding=embeddings
-            )
-            # vectorstore = vectorstore_from_docs.from_texts(
-            #     texts=docs,
-            #     embedding=embeddings,
-            #     index_name=index_name
+            # vectorstore = PineconeVectorStore.from_documents(
+            #         docs,
+            #         index_name=index_name,
+            #         embedding=embeddings
             # )
+            vectorstore = PineconeVectorStore.from_texts(
+                docs,
+                index_name=index_name,
+                embedding=embeddings,
+                namespace="default"
+            )
             logger.info("Pinecone vectorstore initialized successfully.")
             retriever = vectorstore.as_retriever()
             logger.info("Retriever initialized successfully.")
         except Exception as e:
-            logger.error(f"Error during PineconeVectorStore.from_texts: {e}")
+            logger.error(f"Error during PineconeVectorStore: {e}")
             raise
     else:
         logger.warning("Pinecone client not available. Skipping vectorstore and retriever initialization.")
