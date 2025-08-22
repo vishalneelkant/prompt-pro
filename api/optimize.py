@@ -12,7 +12,6 @@ from langchain_pinecone import PineconeVectorStore
 # Load environment variables
 load_dotenv()
 
-
 app = Flask(__name__)
 CORS(app)
 
@@ -20,15 +19,12 @@ CORS(app)
 logger = logging.getLogger("prompt_optimizer")
 logger.setLevel(logging.INFO)
 log_handler = logging.StreamHandler()
-formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
-log_handler.setFormatter(formatter)
+log_handler.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(message)s'))
 if not logger.hasHandlers():
     logger.addHandler(log_handler)
 
-# Initialize Pinecone (commented out due to version compatibility)
+# Pinecone configuration
 pc = None
-
-# Create index if not exists
 index_name = "prompt-technique2"
 
 # Fallback strategies if Pinecone is unavailable
@@ -64,289 +60,200 @@ context_strategies = {
     "general": "General prompting: Use clear, direct language with specific instructions and expected outcomes."
 }
 
-# Lazy initialize embeddings and LLM to avoid heavy import-time side effects
+# Context-specific instructions for different optimization types
+context_instructions = {
+    "rephrase": "Focus on grammar correction, spelling fixes, clarity improvement, professional language refinement, sentence structure optimization, and ensuring the text is clear, concise, and error-free.",
+    "technical": "Provide detailed technical explanations, include step-by-step processes, use precise terminology, technical specifications, and implementation guidance.",
+    "image_generation": "Create world-class image generation prompts using structured prompting: Subject + Details + Style + Technical Specifications + Negative Prompts. Focus on clarity, control, creativity, and quality. Generate prompts that produce stunning, professional-grade images with maximum detail, artistic direction, and technical precision.",
+    "video_generation": "Create world-class video generation prompts using structured prompting: Subject + Motion + Style + Technical Specifications + Negative Prompts. Focus on cinematic quality, smooth transitions, dynamic camera movements, and engaging visual storytelling. Generate prompts that produce professional-grade videos with maximum visual impact and narrative flow.",
+    "general": "Use clear, direct language with specific instructions and expected outcomes, include step-by-step guidance and comprehensive information."
+}
+
+# Lazy initialize components
 embeddings = None
+vectorstore = None
+retriever = None
 
 def get_embeddings():
+    """Initialize and return OpenAI embeddings instance"""
     global embeddings
     if embeddings is not None:
         return embeddings
-    if OpenAIEmbeddings is None:
-        logger.warning("OpenAIEmbeddings is unavailable; skipping embeddings initialization.")
-        return None
     try:
         embeddings = OpenAIEmbeddings(model="text-embedding-ada-002")
         return embeddings
     except Exception as e:
-        logger.error(f"Failed to initialize embeddings: {e}", exc_info=True)
-        embeddings = None
+        logger.error(f"Failed to initialize embeddings: {e}")
         return None
 
 def get_llm():
-    if ChatOpenAI is None:
-        logger.warning("ChatOpenAI is unavailable; LLM calls will use fallback.")
-        return None
+    """Initialize and return ChatOpenAI instance"""
     try:
         return ChatOpenAI(model="gpt-4o", temperature=0)
     except Exception as e:
-        logger.error(f"Failed to initialize ChatOpenAI: {e}", exc_info=True)
+        logger.error(f"Failed to initialize ChatOpenAI: {e}")
         return None
 
-# Create vectorstore if Pinecone is available (commented out due to version compatibility)
-vectorstore = None
-retriever = None
-
 def setup_pinecone_and_vectorstore():
-    """Initialize Pinecone client, ensure index exists, and create vectorstore + retriever lazily.
-    Safe to call multiple times; it will no-op if already initialized.
-    """
+    """Initialize Pinecone client, ensure index exists, and create vectorstore + retriever"""
     global pc, vectorstore, retriever
-    # If retriever already initialized, nothing to do
+    
     if retriever:
-        logger.info("Pinecone vectorstore and retriever already initialized. Skipping setup.")
         return
 
-    # Initialize Pinecone client if not present
+    # Initialize Pinecone client
     if not pc:
         try:
-            logger.info("Initializing Pinecone client (lazy)...")
             pinecone_api_key = os.getenv('PINECONE_API_KEY')
-            pc_local = pinecone.Pinecone(api_key=pinecone_api_key)
-            pc = pc_local
-            logger.info("Pinecone client initialized successfully (lazy).")
+            pc = pinecone.Pinecone(api_key=pinecone_api_key)
         except Exception as e:
-            logger.error(f"Failed to initialize Pinecone client (lazy): {e}")
-            pc = None
+            logger.error(f"Failed to initialize Pinecone client: {e}")
             return
 
     # Ensure index exists
     try:
-        if pc:
-            logger.info(f"Checking if Pinecone index '{index_name}' exists (lazy)...")
-            try:
-                index_list = pc.list_indexes()
-            except Exception as e:
-                logger.error(f"Failed to list Pinecone indexes: {e}")
-                index_list = []
-            logger.info(f"index_list: {index_list}")
-            if index_name not in [i.get("name") if isinstance(i, dict) else i for i in index_list]:
-                try:
-                    logger.info(f"Index '{index_name}' not found. Creating index (lazy)...")
-                    pc.create_index(
-                        name=index_name,
-                        dimension=1536,
-                        metric="cosine",
-                        spec=pinecone.ServerlessSpec(
-                            cloud="aws",
-                            region="us-east-1"
-                        )
-                    )
-                    logger.info(f"Index '{index_name}' created successfully (lazy).")
-                except Exception as e:
-                    logger.error(f"Failed to create index '{index_name}': {e}")
-            else:
-                logger.info(f"Index '{index_name}' already exists (lazy).")
-        else:
-            logger.warning("Pinecone client is not initialized (lazy). Skipping index creation.")
+        index_list = pc.list_indexes()
+        if index_name not in [i.get("name") if isinstance(i, dict) else i for i in index_list]:
+            pc.create_index(
+                name=index_name,
+                dimension=1536,
+                metric="cosine",
+                spec=pinecone.ServerlessSpec(cloud="aws", region="us-east-1")
+            )
     except Exception as e:
-        logger.error(f"Pinecone index creation/listing failed (lazy): {e}")
+        logger.error(f"Pinecone index setup failed: {e}")
+        return
 
-    # Initialize vectorstore and retriever wrapper
+    # Initialize vectorstore and retriever
     try:
-        if pc:
-            logger.info(f"Initializing Pinecone vectorstore wrapper (lazy) with index_name='{index_name}' and docs count={len(docs)}.")
-            try:
-                index = pc.Index(index_name)
-                vectorstore = PineconeVectorStore(index=index, embedding=embeddings)
-                retriever = vectorstore.as_retriever()
-                logger.info(f"Vectorstore and retriever initialized successfully (lazy). retriever={retriever}")
-            except Exception as e:
-                logger.error(f"Error initializing PineconeVectorStore lazily: {e}")
-        else:
-            logger.warning("Pinecone client not available (lazy). Skipping vectorstore and retriever initialization.")
+        index = pc.Index(index_name)
+        embeddings_instance = get_embeddings()
+        if embeddings_instance:
+            vectorstore = PineconeVectorStore(index=index, embedding=embeddings_instance)
+            retriever = vectorstore.as_retriever()
     except Exception as e:
-        logger.error(f"Vectorstore or retriever initialization failed (lazy): {e}")
+        logger.error(f"Vectorstore initialization failed: {e}")
 
 def clean_prompt(prompt: str) -> str:
     """Remove filler words and clean the prompt while preserving important context"""
-    # Only remove truly unnecessary filler words, preserve context-relevant words
     useless_words = ["actually", "basically", "just", "like", "I mean", "you know", "um", "uh", "well"]
     
-    # Create a more targeted regex that doesn't remove words that might be part of the actual request
     cleaned = prompt
     for word in useless_words:
-        # Use word boundaries and be more careful about removal
         pattern = r'\b' + re.escape(word) + r'\b'
         cleaned = re.sub(pattern, '', cleaned, flags=re.IGNORECASE)
     
-    # Clean up extra whitespace and punctuation
-    cleaned = re.sub(r'\s+', ' ', cleaned)  # Multiple spaces to single space
-    cleaned = re.sub(r'\s*,\s*', ', ', cleaned)  # Clean up comma spacing
-    cleaned = re.sub(r'\s*\.\s*', '. ', cleaned)  # Clean up period spacing
-    cleaned = re.sub(r'^\s*[,.\s]+', '', cleaned)  # Remove leading separators
-    cleaned = re.sub(r'[,.\s]+\s*$', '', cleaned)  # Remove trailing separators
+    # Clean up whitespace and punctuation
+    cleaned = re.sub(r'\s+', ' ', cleaned)
+    cleaned = re.sub(r'\s*,\s*', ', ', cleaned)
+    cleaned = re.sub(r'\s*\.\s*', '. ', cleaned)
+    cleaned = re.sub(r'^\s*[,.\s]+', '', cleaned)
+    cleaned = re.sub(r'[,.\s]+\s*$', '', cleaned)
     
     return cleaned.strip()
 
 def get_strategy_for_context(context: str, cleaned_prompt: str):
     """Get the best strategy based on context and prompt content"""
-    # First, try to get context-specific strategy
     context_strategy = context_strategies.get(context, context_strategies["general"])
     
-    # If Pinecone is available, try to get a more specific strategy
     if retriever:
         try:
-            logger.info(f"Attempting to retrieve strategy for context '{context}' and prompt '{cleaned_prompt}'...")
             results = retriever.get_relevant_documents(cleaned_prompt)
-            logger.info(f"Retriever results: {results}")
             if results:
-                logger.info("Strategy retrieved from retriever.")
                 return results[0].page_content
-            else:
-                logger.warning("No relevant documents found by retriever. Using context strategy fallback.")
         except Exception as e:
-            logger.error(f"Strategy retrieval via retriever failed: {e}")
-    else:
-        logger.warning("Retriever is not initialized. Using context strategy fallback.")
-    # Fallback to context-specific strategy
+            logger.error(f"Strategy retrieval failed: {e}")
+    
     return context_strategy
+
+def create_template(context: str, strategy: str, cleaned_prompt: str) -> str:
+    """Create the appropriate template based on context"""
+    context_instruction = context_instructions.get(context, context_instructions["general"])
+    
+    if context in ["image_generation", "video_generation"]:
+        return f"""You are a World-Class {'Image' if context == 'image_generation' else 'Video'} Generation Prompt Engineer.
+
+Your mission is to transform the user's basic idea into a masterpiece-level prompt.
+
+OPTIMIZATION STRATEGY: {strategy}
+CONTEXT INSTRUCTIONS: {context_instruction}
+
+PROMPT STRUCTURE REQUIREMENTS:
+- Start with a clear, powerful subject description
+- Add specific visual attributes and characteristics
+- Include professional composition details
+- Specify lighting with professional terminology
+- Define artistic style and medium with specific references
+- Add emotional and atmospheric elements
+- Include technical quality specifications
+- Add environmental context and background details
+- Specify color palette and visual harmony
+- Include negative prompts to avoid common issues
+
+USER'S ORIGINAL REQUEST: {cleaned_prompt}
+
+Return ONLY the optimized, professional-grade {'image' if context == 'image_generation' else 'video'} generation prompt."""
+
+    elif context == "rephrase":
+        return f"""You are a Text Optimization AI specializing in grammar correction and text refinement.
+
+Your task:
+1. Apply the given prompting strategy: {strategy}
+2. {context_instruction}
+3. Correct all spelling mistakes and grammatical errors
+4. Improve sentence structure and flow
+5. Make the text more professional and clear
+
+Original User Text: {cleaned_prompt}
+
+Return ONLY the corrected and optimized text with proper grammar, spelling, and clarity."""
+
+    else:
+        return f"""You are a Prompt Optimizer AI specializing in {context} content.
+
+Your task:
+1. Apply the given prompting strategy: {strategy}
+2. {context_instruction}
+3. Remove filler words and unnecessary phrases
+4. Ensure the final prompt maximizes reasoning and output quality
+5. Correct any spelling and grammatical mistakes
+
+Original User Prompt: {cleaned_prompt}
+
+Return ONLY the optimized and reformulated prompt."""
 
 def apply_strategy(user_prompt: str, context: str = "general"):
     """Apply optimization strategy based on context and prompt"""
     cleaned_prompt = clean_prompt(user_prompt)
     strategy = get_strategy_for_context(context, cleaned_prompt)
-
-    # build template (unchanged)
-    context_instructions = {
-
-        "rephrase": "Focus on grammar correction, spelling fixes, clarity improvement, professional language refinement, sentence structure optimization, and ensuring the text is clear, concise, and error-free.",
-        "technical": "Provide detailed technical explanations, include step-by-step processes, use precise terminology, technical specifications, and implementation guidance.",
-        "image_generation": "Create world-class image generation prompts using structured prompting: Subject + Details + Style + Technical Specifications + Negative Prompts. Focus on clarity, control, creativity, and quality. Generate prompts that produce stunning, professional-grade images with maximum detail, artistic direction, and technical precision.",
-        "video_generation": "Create world-class video generation prompts using structured prompting: Subject + Motion + Style + Technical Specifications + Negative Prompts. Focus on cinematic quality, smooth transitions, dynamic camera movements, and engaging visual storytelling. Generate prompts that produce professional-grade videos with maximum visual impact and narrative flow.",
-        "image_generation": "Create world-class image generation prompts that understand user intent, analyze visual requirements, and generate comprehensive prompts with professional composition, lighting, style, mood, technical specifications, color harmony, and artistic direction. Focus on creating prompts that generate stunning, professional-quality images with maximum detail and visual impact.",
-        "video_generation": "Specify visual elements, motion dynamics, timing, scene transitions, camera movements, narrative flow, and visual storytelling elements for AI video generation. Include details about pacing, visual effects, cinematic techniques, and narrative structure.",
-        "general": "Use clear, direct language with specific instructions and expected outcomes, include step-by-step guidance and comprehensive information."
-    }
     
-    context_instruction = context_instructions.get(context, context_instructions["general"])
+    template = create_template(context, strategy, cleaned_prompt)
     
-    # Enhanced template for image and video generation
-    if context in ["image_generation", "video_generation"]:
-        template = f"""
-        You are a World-Class Image Generation Prompt Engineer, an expert at creating prompts that generate stunning, professional-quality images.
-
-        Your mission is to transform the user's basic idea into a masterpiece-level prompt that will create exceptional AI-generated images.
-
-        ANALYSIS PHASE:
-        1. Understand the user's core intent and emotional goal
-        2. Identify what type of image they want to create
-        3. Determine the level of detail and sophistication needed
-        4. Assess the intended use case and audience
-        5. Improve sentence structure and flow
-
-        OPTIMIZATION STRATEGY:
-        Apply this strategy: {strategy}
-        
-        CONTEXT INSTRUCTIONS:
-        {context_instruction}
-
-        PROMPT STRUCTURE REQUIREMENTS:
-        - Start with a clear, powerful subject description
-        - Add specific visual attributes and characteristics
-        - Include professional composition details (camera angle, framing, perspective)
-        - Specify lighting with professional terminology
-        - Define artistic style and medium with specific references
-        - Add emotional and atmospheric elements
-        - Include technical quality specifications
-        - Add environmental context and background details
-        - Specify color palette and visual harmony
-        - Include negative prompts to avoid common issues
-        - Use cinematic and artistic language that AI models understand
-
-        USER'S ORIGINAL REQUEST:
-        {cleaned_prompt}
-
-        YOUR TASK:
-        Create a world-class image generation prompt that:
-        1. Captures the user's exact vision and intent
-        2. Uses professional visual language and terminology
-        3. Includes all necessary technical specifications
-        4. Creates an emotionally compelling and visually stunning image
-        5. Is optimized for maximum AI model performance
-        6. Follows industry best practices for prompt engineering
-
-        Return ONLY the optimized, professional-grade image generation prompt.
-        """
-    elif context == "rephrase":
-        template = f"""
-        You are a Text Optimization AI specializing in grammar correction and text refinement.
-
-        Your task:
-        1. Apply the given prompting strategy: {strategy}
-        2. Focus on grammar correction, spelling fixes, and clarity improvement
-        3. {context_instruction}
-        4. Correct all spelling mistakes and grammatical errors
-        5. Improve sentence structure and flow
-        6. Make the text more professional and clear
-        7. Ensure proper punctuation and capitalization
-        8. Remove redundant words while preserving meaning
-        9. Return a polished, error-free version of the original text
-
-        Original User Text:
-        {cleaned_prompt}
-
-        Return ONLY the corrected and optimized text with proper grammar, spelling, and clarity.
-        """
-    else:
-        template = f"""
-        You are a Prompt Optimizer AI specializing in {context} content.
-
-        Your task:
-        1. Apply the given prompting strategy: {strategy}
-        2. Optimize the user's prompt for {context} context
-        3. {context_instruction}
-        4. Remove filler words and unnecessary phrases
-        5. Ensure the final prompt maximizes reasoning and output quality
-        6. Correct any spelling and grammatical mistakes from the prompt
-
-        Original User Prompt:
-        {cleaned_prompt}
-
-        Return ONLY the optimized and reformulated prompt.
-        """
-    
-    # Try to call LLM if available, otherwise fall back
+    # Try to call LLM if available
     llm = get_llm()
     if llm is not None:
         try:
             response = llm.predict(template)
+            if response:
+                if context == "rephrase":
+                    # Clean response for rephrase context
+                    prefixes_to_remove = [
+                        "Corrected and optimized text:", "Corrected text:", "Optimized text:",
+                        "Here's the corrected text:", "The corrected version is:"
+                    ]
+                    cleaned_response = response
+                    for prefix in prefixes_to_remove:
+                        if cleaned_response.startswith(prefix):
+                            cleaned_response = cleaned_response[len(prefix):].strip()
+                            break
+                    cleaned_response = cleaned_response.strip()
+                    if cleaned_response.startswith("."):
+                        cleaned_response = cleaned_response[1:].strip()
+                    return {"original": user_prompt, "strategy": strategy, "optimized": cleaned_response}
+                
+                return {"original": user_prompt, "strategy": strategy, "optimized": response}
         except Exception as e:
-            logger.error(f"LLM call failed: {e}", exc_info=True)
-            response = None
-    else:
-        response = None
-
-    # Handle response and fallbacks
-    if response:
-        if context == "rephrase":
-            cleaned_response = response
-            prefixes_to_remove = [
-                "Corrected and optimized text:",
-                "Corrected text:",
-                "Optimized text:",
-                "Here's the corrected text:",
-                "The corrected version is:"
-            ]
-            for prefix in prefixes_to_remove:
-                if cleaned_response.startswith(prefix):
-                    cleaned_response = cleaned_response[len(prefix):].strip()
-                    break
-            cleaned_response = cleaned_response.strip()
-            if cleaned_response.startswith("."):
-                cleaned_response = cleaned_response[1:].strip()
-            return {"original": user_prompt, "strategy": strategy, "optimized": cleaned_response}
-
-        return {"original": user_prompt, "strategy": strategy, "optimized": response}
+            logger.error(f"LLM call failed: {e}")
 
     # Fallback optimization if LLM not available or failed
     if context == "image_generation":
@@ -360,37 +267,30 @@ def apply_strategy(user_prompt: str, context: str = "general"):
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
+    """Health check endpoint"""
     return jsonify({"status": "healthy", "message": "Prompt Optimizer API is running"})
 
 @app.route('/api/optimize', methods=['POST'])
 def optimize_prompt():
+    """Main endpoint for prompt optimization"""
     try:
-        # Ensure Pinecone and retriever are initialized on-demand when this API is called
-        try:
-            setup_pinecone_and_vectorstore()
-        except Exception as e:
-            logger.error(f"Lazy setup of Pinecone/vectorstore failed at request time: {e}")
-
+        setup_pinecone_and_vectorstore()
+        
         data = request.get_json()
         user_prompt = data.get('prompt', '')
         context = data.get('context', 'general')
-        logger.info(f"Received optimize request: prompt='{user_prompt}', context='{context}'")
         
         if not user_prompt:
-            logger.warning("Prompt is required but missing in request.")
             return jsonify({"error": "Prompt is required"}), 400
         
-        # Validate context
         if context not in context_strategies:
-            logger.info(f"Context '{context}' not recognized. Defaulting to 'general'.")
             context = "general"
         
         result = apply_strategy(user_prompt, context)
-        logger.info(f"Optimization result: {result}")
         return jsonify(result)
         
     except Exception as e:
-        logger.error(f"Error optimizing prompt: {e}", exc_info=True)
+        logger.error(f"Error optimizing prompt: {e}")
         return jsonify({"error": "Failed to optimize prompt"}), 500
 
 @app.route('/api/strategies', methods=['GET'])
@@ -401,42 +301,33 @@ def get_strategies():
         "strategies": docs
     })
 
-
-# Minimal class-based handler required by Vercel (keeps module simple)
-
-
 class handler(BaseHTTPRequestHandler):
+    """Vercel serverless function handler"""
+    
     def do_GET(self):
+        """Handle GET requests"""
         self.send_response(200)
         self.send_header('Content-type', 'text/plain')
         self.end_headers()
         self.wfile.write(b'OK')
-        return
 
     def do_POST(self):
-        # Read request body
+        """Handle POST requests by delegating to Flask app"""
         content_length = int(self.headers.get('Content-Length', 0))
         body = self.rfile.read(content_length) if content_length else b''
-        # Copy request headers
         headers = {k: v for k, v in self.headers.items()}
 
         try:
-            # Call the Flask route inside a test request context so Flask's request object is available
             with app.test_request_context(path=self.path, method='POST', headers=headers, data=body):
                 result = optimize_prompt()
-                # Normalize to a Flask Response
                 flask_resp = make_response(result)
 
-            # Send status and headers
-            status = flask_resp.status_code
-            self.send_response(status)
+            self.send_response(flask_resp.status_code)
             for k, v in flask_resp.headers.items():
-                if k.lower() in ("transfer-encoding", "connection", "keep-alive", "proxy-authenticate", "proxy-authorization", "te", "trailers", "upgrade"):
-                    continue
-                self.send_header(k, v)
+                if k.lower() not in ("transfer-encoding", "connection", "keep-alive", "proxy-authenticate", "proxy-authorization", "te", "trailers", "upgrade"):
+                    self.send_header(k, v)
             self.end_headers()
 
-            # Write response body
             data = flask_resp.get_data()
             if data:
                 self.wfile.write(data)
@@ -448,9 +339,6 @@ class handler(BaseHTTPRequestHandler):
                 self.wfile.write(str(e).encode('utf-8'))
             except Exception:
                 pass
-        return
 
-
-# Local development entry point
 if __name__ == "__main__":
     app.run()
