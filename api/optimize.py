@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import sys
 import traceback
 import builtins
+import typing
 
 # Load environment variables
 load_dotenv()
@@ -29,14 +30,16 @@ if not getattr(builtins, '_issubclass_wrapped_for_diagnostics', False):
     def _diagnostic_issubclass(cls, classinfo):
         # Check if cls is actually a type/class before proceeding
         if not isinstance(cls, type):
-            # Log the diagnostic info but don't crash
-            logger.error("issubclass diagnostic: first-arg is not a class")
-            try:
-                arg_type = type(cls)
-                arg_repr = repr(cls)[:100]  # Truncate to avoid huge logs
-                logger.error(f"Offending issubclass first-arg type: {arg_type}; value repr: {arg_repr}")
-            except Exception:
-                logger.error("Could not get type info for non-class argument")
+            # Handle typing constructs gracefully - these are expected
+            if hasattr(cls, '__module__') and cls.__module__ == 'typing':
+                return False
+            if hasattr(cls, '__origin__'):  # Generic types like Union, List, etc.
+                return False
+            if callable(cls) and hasattr(cls, '__name__'):  # Functions
+                return False
+            
+            # Only log unexpected cases
+            logger.debug(f"issubclass called with non-class: {type(cls)}")
             return False
         return _orig_issubclass(cls, classinfo)
     builtins.issubclass = _diagnostic_issubclass
@@ -450,15 +453,33 @@ def get_strategies():
         "strategies": docs
     })
 
-def handler(request):
-    """Vercel serverless function handler"""
+def handler(request, context):
+    """Vercel serverless function handler with correct signature"""
     try:
+        # Extract path from request URL
+        path = getattr(request.url, 'path', '/api/optimize')
+        method = request.method
+        headers = dict(request.headers) if hasattr(request, 'headers') else {}
+        
+        # Handle request body
+        body = None
+        if hasattr(request, 'body'):
+            body = request.body
+        elif hasattr(request, 'get_json'):
+            try:
+                body = request.get_json()
+            except:
+                body = None
+        
+        # Handle query string
+        query_string = getattr(request.url, 'query', '') if hasattr(request, 'url') else ''
+        
         with app.test_request_context(
-            path=request.url.path,
-            method=request.method,
-            headers=dict(request.headers),
-            data=request.body,
-            query_string=request.url.query
+            path=path,
+            method=method,
+            headers=headers,
+            data=body,
+            query_string=query_string
         ):
             try:
                 response = app.full_dispatch_request()
