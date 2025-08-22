@@ -110,6 +110,7 @@ try:
             vectorstore = PineconeVectorStore(index=index, embedding=embeddings)
             logger.info("Pinecone vectorstore initialized successfully.")
             retriever = vectorstore.as_retriever()
+            logger.info(f"Retriever created successfully. retriever: {retriever}")
             logger.info("Retriever initialized successfully.")
         except Exception as e:
             logger.error(f"Error during PineconeVectorStore: {e}")
