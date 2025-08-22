@@ -1,13 +1,11 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response
 import logging
 from flask_cors import CORS
 import os
 import pinecone
 import re
 from dotenv import load_dotenv
-import sys
-import traceback
-import builtins
+from http.server import BaseHTTPRequestHandler
 
 # Load environment variables
 load_dotenv()
@@ -24,48 +22,6 @@ formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(mess
 log_handler.setFormatter(formatter)
 if not logger.hasHandlers():
     logger.addHandler(log_handler)
-
-# Diagnostic: check key package versions to help debug issubclass() TypeError
-try:
-    import typing_extensions
-    te_version = getattr(typing_extensions, '__version__', str(typing_extensions.__dict__.get('__version__', 'unknown')))
-except Exception:
-    te_version = 'not installed or import failed'
-
-try:
-    import pydantic
-    pydantic_version = getattr(pydantic, '__version__', 'unknown')
-except Exception:
-    pydantic_version = 'not installed or import failed'
-
-try:
-    import openai
-    openai_version = getattr(openai, '__version__', 'unknown')
-except Exception:
-    openai_version = 'not installed or import failed'
-
-try:
-    import langchain
-    langchain_version = getattr(langchain, '__version__', 'unknown')
-except Exception:
-    langchain_version = 'not installed or import failed'
-
-logger.info(f"Python version: {sys.version.split()[0]}")
-logger.info(f"typing_extensions: {te_version}, pydantic: {pydantic_version}, openai: {openai_version}, langchain: {langchain_version}")
-
-# Wrap risky third-party imports that previously caused crashes so we can log their tracebacks
-try:
-    from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-except Exception as e:
-    logger.error("Failed to import langchain_openai module", exc_info=True)
-    OpenAIEmbeddings = None
-    ChatOpenAI = None
-
-try:
-    from langchain_pinecone import PineconeVectorStore
-except Exception as e:
-    logger.error("Failed to import langchain_pinecone module", exc_info=True)
-    PineconeVectorStore = None
 
 # Initialize Pinecone (commented out due to version compatibility)
 pc = None
@@ -106,7 +62,33 @@ context_strategies = {
     "general": "General prompting: Use clear, direct language with specific instructions and expected outcomes."
 }
 
-embeddings = OpenAIEmbeddings(model="text-embedding-ada-002")
+# Lazy initialize embeddings and LLM to avoid heavy import-time side effects
+embeddings = None
+
+def get_embeddings():
+    global embeddings
+    if embeddings is not None:
+        return embeddings
+    if OpenAIEmbeddings is None:
+        logger.warning("OpenAIEmbeddings is unavailable; skipping embeddings initialization.")
+        return None
+    try:
+        embeddings = OpenAIEmbeddings(model="text-embedding-ada-002")
+        return embeddings
+    except Exception as e:
+        logger.error(f"Failed to initialize embeddings: {e}", exc_info=True)
+        embeddings = None
+        return None
+
+def get_llm():
+    if ChatOpenAI is None:
+        logger.warning("ChatOpenAI is unavailable; LLM calls will use fallback.")
+        return None
+    try:
+        return ChatOpenAI(model="gpt-4o", temperature=0)
+    except Exception as e:
+        logger.error(f"Failed to initialize ChatOpenAI: {e}", exc_info=True)
+        return None
 
 # Create vectorstore if Pinecone is available (commented out due to version compatibility)
 vectorstore = None
@@ -229,14 +211,10 @@ def get_strategy_for_context(context: str, cleaned_prompt: str):
 
 def apply_strategy(user_prompt: str, context: str = "general"):
     """Apply optimization strategy based on context and prompt"""
-    # print("str ", str)
-    # Step 1: Clean the prompt
     cleaned_prompt = clean_prompt(user_prompt)
-    
-    # Step 2: Get strategy based on context
     strategy = get_strategy_for_context(context, cleaned_prompt)
-    
-    # Step 3: Create context-aware optimization template
+
+    # build template (unchanged)
     context_instructions = {
 
         "rephrase": "Focus on grammar correction, spelling fixes, clarity improvement, professional language refinement, sentence structure optimization, and ensuring the text is clear, concise, and error-free.",
@@ -335,13 +313,20 @@ def apply_strategy(user_prompt: str, context: str = "general"):
         Return ONLY the optimized and reformulated prompt.
         """
     
-    try:
-        llm = ChatOpenAI(model="gpt-4o", temperature=0)
-        response = llm.predict(template)
-        # print("response ", response)
-        # Clean up response for rephrase context
+    # Try to call LLM if available, otherwise fall back
+    llm = get_llm()
+    if llm is not None:
+        try:
+            response = llm.predict(template)
+        except Exception as e:
+            logger.error(f"LLM call failed: {e}", exc_info=True)
+            response = None
+    else:
+        response = None
+
+    # Handle response and fallbacks
+    if response:
         if context == "rephrase":
-            # Remove common prefixes that might be added by the LLM
             cleaned_response = response
             prefixes_to_remove = [
                 "Corrected and optimized text:",
@@ -350,47 +335,26 @@ def apply_strategy(user_prompt: str, context: str = "general"):
                 "Here's the corrected text:",
                 "The corrected version is:"
             ]
-            
             for prefix in prefixes_to_remove:
                 if cleaned_response.startswith(prefix):
                     cleaned_response = cleaned_response[len(prefix):].strip()
                     break
-            
-            # Clean up any extra whitespace or punctuation
             cleaned_response = cleaned_response.strip()
             if cleaned_response.startswith("."):
                 cleaned_response = cleaned_response[1:].strip()
-            
-            return {
-                "original": user_prompt,
-                "strategy": strategy,
-                "optimized": cleaned_response
-            }
-        else:
-            return {
-                "original": user_prompt,
-                "strategy": strategy,
-                "optimized": response
-            }
-            
-    except Exception as e:
-            print(f"⚠️  LLM call failed: {e}")
-            # Fallback optimization with context-specific logic
-            if context == "image_generation":
-                fallback_prompt = f"Create a detailed image of {cleaned_prompt} with vivid colors, clear composition, artistic style, and professional lighting. Include specific visual elements and mood."
-            elif context == "video_generation":
-                fallback_prompt = f"Generate a video of {cleaned_prompt} with smooth motion, clear scene transitions, dynamic camera movements, and engaging visual storytelling elements."
-            # elif context == "rephrase":
-            #     # Clean fallback response for rephrase context
-            #     fallback_prompt = f"I receive your message and will definitely respond."
-            else:
-                fallback_prompt = f"Please provide a detailed, {context}-focused response about: {cleaned_prompt}"
-            
-            return {
-                "original": user_prompt,
-                "strategy": strategy,
-                "optimized": fallback_prompt
-            }
+            return {"original": user_prompt, "strategy": strategy, "optimized": cleaned_response}
+
+        return {"original": user_prompt, "strategy": strategy, "optimized": response}
+
+    # Fallback optimization if LLM not available or failed
+    if context == "image_generation":
+        fallback_prompt = f"Create a detailed image of {cleaned_prompt} with vivid colors, clear composition, artistic style, and professional lighting. Include specific visual elements and mood."
+    elif context == "video_generation":
+        fallback_prompt = f"Generate a video of {cleaned_prompt} with smooth motion, clear scene transitions, dynamic camera movements, and engaging visual storytelling elements."
+    else:
+        fallback_prompt = f"Please provide a detailed, {context}-focused response about: {cleaned_prompt}"
+
+    return {"original": user_prompt, "strategy": strategy, "optimized": fallback_prompt}
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -436,52 +400,54 @@ def get_strategies():
     })
 
 
-# Diagnostic wrapper: intercept issubclass calls to log offending non-class first args
-if not getattr(builtins, '_issubclass_wrapped_for_diagnostics', False):
-    _orig_issubclass = builtins.issubclass
-    def _diagnostic_issubclass(cls, classinfo):
-        # If cls is not a class, avoid calling original issubclass which would raise
-        if not isinstance(cls, type):
-            try:
-                logger.error("issubclass diagnostic: first-arg is not a class", exc_info=False)
-                try:
-                    arg_type = type(cls)
-                    arg_repr = repr(cls)
-                except Exception:
-                    arg_type = 'unrepresentable'
-                    arg_repr = '<unrepresentable>'
-                logger.error(f"Offending issubclass first-arg type: {arg_type}; value repr (truncated): {arg_repr[:1000]}")
-            except Exception:
-                pass
-            # Return False to indicate 'cls' is not subclass of classinfo
-            return False
-        # Otherwise, behave normally and preserve original exceptions
-        return _orig_issubclass(cls, classinfo)
-    builtins.issubclass = _diagnostic_issubclass
-    builtins._issubclass_wrapped_for_diagnostics = True
+# Minimal class-based handler required by Vercel (keeps module simple)
 
-
-# Vercel Python Function handler (class-based as required by Vercel)
-from http.server import BaseHTTPRequestHandler
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        # Minimal response to satisfy Vercel's Handler requirement
         self.send_response(200)
         self.send_header('Content-type', 'text/plain')
         self.end_headers()
-        self.wfile.write('Hello, world!'.encode('utf-8'))
+        self.wfile.write(b'OK')
         return
 
     def do_POST(self):
-        # Minimal POST handler (returns empty JSON) — adjust if you need to proxy to Flask app
+        # Read request body
         content_length = int(self.headers.get('Content-Length', 0))
-        _ = self.rfile.read(content_length) if content_length else b''
-        self.send_response(200)
-        self.send_header('Content-type', 'application/json')
-        self.end_headers()
-        self.wfile.write(b'{}')
+        body = self.rfile.read(content_length) if content_length else b''
+        # Copy request headers
+        headers = {k: v for k, v in self.headers.items()}
+
+        try:
+            # Call the Flask route inside a test request context so Flask's request object is available
+            with app.test_request_context(path=self.path, method='POST', headers=headers, data=body):
+                result = optimize_prompt()
+                # Normalize to a Flask Response
+                flask_resp = make_response(result)
+
+            # Send status and headers
+            status = flask_resp.status_code
+            self.send_response(status)
+            for k, v in flask_resp.headers.items():
+                if k.lower() in ("transfer-encoding", "connection", "keep-alive", "proxy-authenticate", "proxy-authorization", "te", "trailers", "upgrade"):
+                    continue
+                self.send_header(k, v)
+            self.end_headers()
+
+            # Write response body
+            data = flask_resp.get_data()
+            if data:
+                self.wfile.write(data)
+        except Exception as e:
+            try:
+                self.send_response(500)
+                self.send_header('Content-type', 'text/plain')
+                self.end_headers()
+                self.wfile.write(str(e).encode('utf-8'))
+            except Exception:
+                pass
         return
+
 
 # Local development entry point
 if __name__ == "__main__":
