@@ -102,31 +102,12 @@ retriever = None
 try:
     if pc:
         logger.info(f"Preparing to initialize Pinecone vectorstore with index_name='{index_name}' and docs count={len(docs)}.")
-        logger.info(f"Embedding model: {embeddings}")
-        # Check if index exists before using
-        try:
-            index_list = pc.list_indexes()
-            logger.info(f"Index list before vectorstore init: {index_list}")
-            if index_name not in [i["name"] for i in index_list]:
-                logger.error(f"Index '{index_name}' does not exist before vectorstore init. Aborting vectorstore creation.")
-                raise FileNotFoundError(f"Pinecone index '{index_name}' not found.")
-        except Exception as e:
-            logger.error(f"Error checking Pinecone index existence before vectorstore init: {e}")
-            raise
+        index = pc.Index(index_name)
+        
         # Try initializing vectorstore
         try:
             logger.info("Initializing Pinecone vectorstore...")
-            # vectorstore = PineconeVectorStore.from_documents(
-            #         docs,
-            #         index_name=index_name,
-            #         embedding=embeddings
-            # )
-            vectorstore = PineconeVectorStore.from_texts(
-                docs,
-                index_name=index_name,
-                embedding=embeddings,
-                namespace="default"
-            )
+            vectorstore = PineconeVectorStore(index=index, embedding=embeddings)
             logger.info("Pinecone vectorstore initialized successfully.")
             retriever = vectorstore.as_retriever()
             logger.info("Retriever initialized successfully.")
