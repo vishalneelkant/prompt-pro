@@ -12,7 +12,6 @@ import builtins
 # Load environment variables
 load_dotenv()
 
-
 app = Flask(__name__)
 CORS(app)
 
@@ -24,6 +23,24 @@ formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(mess
 log_handler.setFormatter(formatter)
 if not logger.hasHandlers():
     logger.addHandler(log_handler)
+
+if not getattr(builtins, '_issubclass_wrapped_for_diagnostics', False):
+    _orig_issubclass = builtins.issubclass
+    def _diagnostic_issubclass(cls, classinfo):
+        # Check if cls is actually a type/class before proceeding
+        if not isinstance(cls, type):
+            # Log the diagnostic info but don't crash
+            logger.error("issubclass diagnostic: first-arg is not a class")
+            try:
+                arg_type = type(cls)
+                arg_repr = repr(cls)[:100]  # Truncate to avoid huge logs
+                logger.error(f"Offending issubclass first-arg type: {arg_type}; value repr: {arg_repr}")
+            except Exception:
+                logger.error("Could not get type info for non-class argument")
+            return False
+        return _orig_issubclass(cls, classinfo)
+    builtins.issubclass = _diagnostic_issubclass
+    builtins._issubclass_wrapped_for_diagnostics = True
 
 # Diagnostic: check key package versions to help debug issubclass() TypeError
 try:
@@ -243,8 +260,6 @@ def apply_strategy(user_prompt: str, context: str = "general"):
         "technical": "Provide detailed technical explanations, include step-by-step processes, use precise terminology, technical specifications, and implementation guidance.",
         "image_generation": "Create world-class image generation prompts using structured prompting: Subject + Details + Style + Technical Specifications + Negative Prompts. Focus on clarity, control, creativity, and quality. Generate prompts that produce stunning, professional-grade images with maximum detail, artistic direction, and technical precision.",
         "video_generation": "Create world-class video generation prompts using structured prompting: Subject + Motion + Style + Technical Specifications + Negative Prompts. Focus on cinematic quality, smooth transitions, dynamic camera movements, and engaging visual storytelling. Generate prompts that produce professional-grade videos with maximum visual impact and narrative flow.",
-        "image_generation": "Create world-class image generation prompts that understand user intent, analyze visual requirements, and generate comprehensive prompts with professional composition, lighting, style, mood, technical specifications, color harmony, and artistic direction. Focus on creating prompts that generate stunning, professional-quality images with maximum detail and visual impact.",
-        "video_generation": "Specify visual elements, motion dynamics, timing, scene transitions, camera movements, narrative flow, and visual storytelling elements for AI video generation. Include details about pacing, visual effects, cinematic techniques, and narrative structure.",
         "general": "Use clear, direct language with specific instructions and expected outcomes, include step-by-step guidance and comprehensive information."
     }
     
@@ -435,37 +450,38 @@ def get_strategies():
         "strategies": docs
     })
 
-
-# Diagnostic wrapper: intercept issubclass calls to log offending non-class first args
-if not getattr(builtins, '_issubclass_wrapped_for_diagnostics', False):
-    _orig_issubclass = builtins.issubclass
-    def _diagnostic_issubclass(cls, classinfo):
-        # If cls is not a class, avoid calling original issubclass which would raise
-        if not isinstance(cls, type):
+def handler(request):
+    """Vercel serverless function handler"""
+    try:
+        with app.test_request_context(
+            path=request.url.path,
+            method=request.method,
+            headers=dict(request.headers),
+            data=request.body,
+            query_string=request.url.query
+        ):
             try:
-                logger.error("issubclass diagnostic: first-arg is not a class", exc_info=False)
-                try:
-                    arg_type = type(cls)
-                    arg_repr = repr(cls)
-                except Exception:
-                    arg_type = 'unrepresentable'
-                    arg_repr = '<unrepresentable>'
-                logger.error(f"Offending issubclass first-arg type: {arg_type}; value repr (truncated): {arg_repr[:1000]}")
-            except Exception:
-                pass
-            # Return False to indicate 'cls' is not subclass of classinfo
-            return False
-        # Otherwise, behave normally and preserve original exceptions
-        return _orig_issubclass(cls, classinfo)
-    builtins.issubclass = _diagnostic_issubclass
-    builtins._issubclass_wrapped_for_diagnostics = True
-
-
-# Vercel Python Function handler
-def handler(environ, start_response):
-    return app(environ, start_response)
-
+                response = app.full_dispatch_request()
+                return {
+                    'statusCode': response.status_code,
+                    'headers': dict(response.headers),
+                    'body': response.get_data(as_text=True)
+                }
+            except Exception as e:
+                logger.error(f"Request processing error: {e}", exc_info=True)
+                return {
+                    'statusCode': 500,
+                    'headers': {'Content-Type': 'application/json'},
+                    'body': '{"error": "Internal server error"}'
+                }
+    except Exception as e:
+        logger.error(f"Handler error: {e}", exc_info=True)
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json'},
+            'body': '{"error": "Handler initialization error"}'
+        }
 
 # Local development entry point
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
