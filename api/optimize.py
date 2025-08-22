@@ -6,6 +6,8 @@ import pinecone
 import re
 from dotenv import load_dotenv
 from http.server import BaseHTTPRequestHandler
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain_pinecone import PineconeVectorStore
 
 # Load environment variables
 load_dotenv()
@@ -126,7 +128,7 @@ def setup_pinecone_and_vectorstore():
             except Exception as e:
                 logger.error(f"Failed to list Pinecone indexes: {e}")
                 index_list = []
-
+            logger.info(f"index_list: {index_list}")
             if index_name not in [i.get("name") if isinstance(i, dict) else i for i in index_list]:
                 try:
                     logger.info(f"Index '{index_name}' not found. Creating index (lazy)...")
