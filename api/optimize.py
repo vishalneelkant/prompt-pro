@@ -5,8 +5,8 @@ import os
 import pinecone
 import re
 from dotenv import load_dotenv
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain_pinecone import PineconeVectorStore
+import sys
+import traceback
 
 # Load environment variables
 load_dotenv()
@@ -23,6 +23,48 @@ formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(mess
 handler.setFormatter(formatter)
 if not logger.hasHandlers():
     logger.addHandler(handler)
+
+# Diagnostic: check key package versions to help debug issubclass() TypeError
+try:
+    import typing_extensions
+    te_version = getattr(typing_extensions, '__version__', str(typing_extensions.__dict__.get('__version__', 'unknown')))
+except Exception:
+    te_version = 'not installed or import failed'
+
+try:
+    import pydantic
+    pydantic_version = getattr(pydantic, '__version__', 'unknown')
+except Exception:
+    pydantic_version = 'not installed or import failed'
+
+try:
+    import openai
+    openai_version = getattr(openai, '__version__', 'unknown')
+except Exception:
+    openai_version = 'not installed or import failed'
+
+try:
+    import langchain
+    langchain_version = getattr(langchain, '__version__', 'unknown')
+except Exception:
+    langchain_version = 'not installed or import failed'
+
+logger.info(f"Python version: {sys.version.split()[0]}")
+logger.info(f"typing_extensions: {te_version}, pydantic: {pydantic_version}, openai: {openai_version}, langchain: {langchain_version}")
+
+# Wrap risky third-party imports that previously caused crashes so we can log their tracebacks
+try:
+    from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+except Exception as e:
+    logger.error("Failed to import langchain_openai module", exc_info=True)
+    OpenAIEmbeddings = None
+    ChatOpenAI = None
+
+try:
+    from langchain_pinecone import PineconeVectorStore
+except Exception as e:
+    logger.error("Failed to import langchain_pinecone module", exc_info=True)
+    PineconeVectorStore = None
 
 # Initialize Pinecone (commented out due to version compatibility)
 pc = None
