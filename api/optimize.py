@@ -28,8 +28,6 @@ if not logger.hasHandlers():
 try:
     logger.info("Initializing Pinecone client...")
     pinecone_api_key = os.getenv('PINECONE_API_KEY')
-    if not pinecone_api_key:
-        logger.error("PINECONE_API_KEY not found in environment variables.")
     pc = pinecone.Pinecone(api_key=pinecone_api_key)
     logger.info("Pinecone client initialized successfully.")
 except Exception as e:
@@ -42,7 +40,6 @@ try:
     if pc:
         logger.info(f"Checking if Pinecone index '{index_name}' exists...")
         index_list = pc.list_indexes()
-        logger.info(f"Available indexes: {index_list}")
         if index_name not in [i["name"] for i in index_list]:
             logger.info(f"Index '{index_name}' not found. Creating index...")
             pc.create_index(
@@ -123,16 +120,16 @@ try:
         # Try initializing vectorstore
         try:
             logger.info("Initializing Pinecone vectorstore...")
-            vectorstore_from_docs = PineconeVectorStore.from_documents(
+            vectorstore = PineconeVectorStore.from_documents(
                     docs,
                     index_name=index_name,
                     embedding=embeddings
             )
-            vectorstore = vectorstore_from_docs.from_texts(
-                texts=docs,
-                embedding=embeddings,
-                index_name=index_name
-            )
+            # vectorstore = vectorstore_from_docs.from_texts(
+            #     texts=docs,
+            #     embedding=embeddings,
+            #     index_name=index_name
+            # )
             logger.info("Pinecone vectorstore initialized successfully.")
             retriever = vectorstore.as_retriever()
             logger.info("Retriever initialized successfully.")
