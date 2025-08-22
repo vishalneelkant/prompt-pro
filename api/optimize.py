@@ -19,11 +19,11 @@ CORS(app)
 # Setup logger
 logger = logging.getLogger("prompt_optimizer")
 logger.setLevel(logging.INFO)
-handler = logging.StreamHandler()
+log_handler = logging.StreamHandler()
 formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
-handler.setFormatter(formatter)
+log_handler.setFormatter(formatter)
 if not logger.hasHandlers():
-    logger.addHandler(handler)
+    logger.addHandler(log_handler)
 
 # Diagnostic: check key package versions to help debug issubclass() TypeError
 try:
@@ -461,11 +461,9 @@ if not getattr(builtins, '_issubclass_wrapped_for_diagnostics', False):
     builtins._issubclass_wrapped_for_diagnostics = True
 
 
-# # Vercel Python Function handler
-# def handler(environ, start_response):
-#     from werkzeug.middleware.dispatcher import DispatcherMiddleware
-#     application = DispatcherMiddleware(app)
-#     return application(environ, start_response)
+# Vercel Python Function handler
+def handler(environ, start_response):
+    return app(environ, start_response)
 
 
 # Local development entry point
