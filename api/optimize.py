@@ -440,12 +440,10 @@ def get_strategies():
 if not getattr(builtins, '_issubclass_wrapped_for_diagnostics', False):
     _orig_issubclass = builtins.issubclass
     def _diagnostic_issubclass(cls, classinfo):
-        try:
-            return _orig_issubclass(cls, classinfo)
-        except TypeError as te:
+        # If cls is not a class, avoid calling original issubclass which would raise
+        if not isinstance(cls, type):
             try:
-                logger.error("issubclass() raised TypeError — logging diagnostic info", exc_info=True)
-                # Log the exact type and a safe repr of the first argument
+                logger.error("issubclass diagnostic: first-arg is not a class", exc_info=False)
                 try:
                     arg_type = type(cls)
                     arg_repr = repr(cls)
@@ -455,8 +453,10 @@ if not getattr(builtins, '_issubclass_wrapped_for_diagnostics', False):
                 logger.error(f"Offending issubclass first-arg type: {arg_type}; value repr (truncated): {arg_repr[:1000]}")
             except Exception:
                 pass
-            # Re-raise the original error to keep behavior unchanged
-            raise
+            # Return False to indicate 'cls' is not subclass of classinfo
+            return False
+        # Otherwise, behave normally and preserve original exceptions
+        return _orig_issubclass(cls, classinfo)
     builtins.issubclass = _diagnostic_issubclass
     builtins._issubclass_wrapped_for_diagnostics = True
 
