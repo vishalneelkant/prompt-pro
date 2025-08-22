@@ -25,41 +25,10 @@ if not logger.hasHandlers():
     logger.addHandler(handler)
 
 # Initialize Pinecone (commented out due to version compatibility)
-try:
-    logger.info("Initializing Pinecone client...")
-    pinecone_api_key = os.getenv('PINECONE_API_KEY')
-    pc = pinecone.Pinecone(api_key=pinecone_api_key)
-    logger.info("Pinecone client initialized successfully.")
-except Exception as e:
-    logger.error(f"Failed to initialize Pinecone client: {e}")
-    pc = None
+pc = None
 
 # Create index if not exists
 index_name = "prompt-technique2"
-try:
-    if pc:
-        logger.info(f"Checking if Pinecone index '{index_name}' exists...")
-        index_list = pc.list_indexes()
-        if index_name not in [i["name"] for i in index_list]:
-            logger.info(f"Index '{index_name}' not found. Creating index...")
-            pc.create_index(
-                name=index_name,
-                dimension=1536,
-                metric="cosine",
-                spec=pinecone.ServerlessSpec(
-                    cloud="aws",
-                    region="us-east-1"
-                )
-            )
-            logger.info(f"Index '{index_name}' created successfully.")
-        else:
-            logger.info(f"Index '{index_name}' already exists.")
-    else:
-        logger.warning("Pinecone client is not initialized. Skipping index creation.")
-except Exception as e:
-    logger.error(f"Pinecone index creation/listing failed: {e}")
-    logger.info("Using fallback strategies...")
-    logger.warning("Pinecone disabled due to version compatibility - using fallback strategies...")
 
 # Fallback strategies if Pinecone is unavailable
 docs = [
@@ -99,29 +68,77 @@ embeddings = OpenAIEmbeddings(model="text-embedding-ada-002")
 # Create vectorstore if Pinecone is available (commented out due to version compatibility)
 vectorstore = None
 retriever = None
-try:
-    if pc:
-        logger.info(f"Preparing to initialize Pinecone vectorstore with index_name='{index_name}' and docs count={len(docs)}.")
-        index = pc.Index(index_name)
-        
-        # Try initializing vectorstore
+
+def setup_pinecone_and_vectorstore():
+    """Initialize Pinecone client, ensure index exists, and create vectorstore + retriever lazily.
+    Safe to call multiple times; it will no-op if already initialized.
+    """
+    global pc, vectorstore, retriever
+    # If retriever already initialized, nothing to do
+    if retriever:
+        logger.info("Pinecone vectorstore and retriever already initialized. Skipping setup.")
+        return
+
+    # Initialize Pinecone client if not present
+    if not pc:
         try:
-            logger.info("Initializing Pinecone vectorstore...")
-            vectorstore = PineconeVectorStore(index=index, embedding=embeddings)
-            logger.info("Pinecone vectorstore initialized successfully.")
-            retriever = vectorstore.as_retriever()
-            logger.info(f"Retriever created successfully. retriever: {retriever}")
-            logger.info("Retriever initialized successfully.")
+            logger.info("Initializing Pinecone client (lazy)...")
+            pinecone_api_key = os.getenv('PINECONE_API_KEY')
+            pc_local = pinecone.Pinecone(api_key=pinecone_api_key)
+            pc = pc_local
+            logger.info("Pinecone client initialized successfully (lazy).")
         except Exception as e:
-            logger.error(f"Error during PineconeVectorStore: {e}")
-            raise
-    else:
-        logger.warning("Pinecone client not available. Skipping vectorstore and retriever initialization.")
-except Exception as e:
-    logger.error(f"Vectorstore or retriever initialization failed: {e}")
-    logger.info("Using fallback strategy selection")
-    logger.info("Using fallback strategy selection (no vectorstore)")
-    retriever = None
+            logger.error(f"Failed to initialize Pinecone client (lazy): {e}")
+            pc = None
+            return
+
+    # Ensure index exists
+    try:
+        if pc:
+            logger.info(f"Checking if Pinecone index '{index_name}' exists (lazy)...")
+            try:
+                index_list = pc.list_indexes()
+            except Exception as e:
+                logger.error(f"Failed to list Pinecone indexes: {e}")
+                index_list = []
+
+            if index_name not in [i.get("name") if isinstance(i, dict) else i for i in index_list]:
+                try:
+                    logger.info(f"Index '{index_name}' not found. Creating index (lazy)...")
+                    pc.create_index(
+                        name=index_name,
+                        dimension=1536,
+                        metric="cosine",
+                        spec=pinecone.ServerlessSpec(
+                            cloud="aws",
+                            region="us-east-1"
+                        )
+                    )
+                    logger.info(f"Index '{index_name}' created successfully (lazy).")
+                except Exception as e:
+                    logger.error(f"Failed to create index '{index_name}': {e}")
+            else:
+                logger.info(f"Index '{index_name}' already exists (lazy).")
+        else:
+            logger.warning("Pinecone client is not initialized (lazy). Skipping index creation.")
+    except Exception as e:
+        logger.error(f"Pinecone index creation/listing failed (lazy): {e}")
+
+    # Initialize vectorstore and retriever wrapper
+    try:
+        if pc:
+            logger.info(f"Initializing Pinecone vectorstore wrapper (lazy) with index_name='{index_name}' and docs count={len(docs)}.")
+            try:
+                index = pc.Index(index_name)
+                vectorstore = PineconeVectorStore(index=index, embedding=embeddings)
+                retriever = vectorstore.as_retriever()
+                logger.info(f"Vectorstore and retriever initialized successfully (lazy). retriever={retriever}")
+            except Exception as e:
+                logger.error(f"Error initializing PineconeVectorStore lazily: {e}")
+        else:
+            logger.warning("Pinecone client not available (lazy). Skipping vectorstore and retriever initialization.")
+    except Exception as e:
+        logger.error(f"Vectorstore or retriever initialization failed (lazy): {e}")
 
 def clean_prompt(prompt: str) -> str:
     """Remove filler words and clean the prompt while preserving important context"""
@@ -339,6 +356,12 @@ def health_check():
 @app.route('/api/optimize', methods=['POST'])
 def optimize_prompt():
     try:
+        # Ensure Pinecone and retriever are initialized on-demand when this API is called
+        try:
+            setup_pinecone_and_vectorstore()
+        except Exception as e:
+            logger.error(f"Lazy setup of Pinecone/vectorstore failed at request time: {e}")
+
         data = request.get_json()
         user_prompt = data.get('prompt', '')
         context = data.get('context', 'general')
