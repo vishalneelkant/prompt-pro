@@ -1,0 +1,9 @@
+flask==2.3.3
+flask-cors==4.0.0
+python-dotenv==1.0.0
+pinecone-client>=3.2.2
+langchain==0.3.27
+langchain-openai>=0.1.0
+langchain-pinecone>=0.1.0
+openai==1.101.0
+pydantic==2.11.7
