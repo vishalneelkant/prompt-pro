@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, jsonify, make_response, session
 import logging
 from flask_cors import CORS
 import os
@@ -8,12 +8,36 @@ from dotenv import load_dotenv
 from http.server import BaseHTTPRequestHandler
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_pinecone import PineconeVectorStore
+from auth import auth_bp, db, login_manager
+from flask_login import current_user
+import uuid
 
 # Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
+
+# Database configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///prompt_optimizer.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-change-in-production')
+
+# Initialize extensions
+db.init_app(app)
+login_manager.init_app(app)
+login_manager.login_view = 'auth.login'
+
+# Session configuration for anonymous user tracking
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 hours
+
+# Register blueprints
+app.register_blueprint(auth_bp, url_prefix='/api/auth')
+
+# Anonymous user request tracking
+ANONYMOUS_REQUEST_LIMIT = 3
+anonymous_requests = {}  # Store anonymous user requests in memory
 
 # Setup logger
 logger = logging.getLogger("prompt_optimizer")
@@ -22,6 +46,49 @@ log_handler = logging.StreamHandler()
 log_handler.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(message)s'))
 if not logger.hasHandlers():
     logger.addHandler(log_handler)
+
+# Create database tables
+with app.app_context():
+    db.create_all()
+    logger.info("Database tables created successfully")
+
+def get_anonymous_user_id():
+    """Generate or retrieve anonymous user ID from session"""
+    if 'anonymous_id' not in session:
+        session['anonymous_id'] = str(uuid.uuid4())
+    return session['anonymous_id']
+
+def check_anonymous_request_limit():
+    """Check if anonymous user has exceeded request limit"""
+    if current_user.is_authenticated:
+        return True, None  # Authenticated users have no limit
+    
+    anonymous_id = get_anonymous_user_id()
+    request_count = anonymous_requests.get(anonymous_id, 0)
+    
+    if request_count >= ANONYMOUS_REQUEST_LIMIT:
+        remaining = 0
+        return False, {
+            'error': 'Anonymous request limit reached',
+            'message': f'You have used all {ANONYMOUS_REQUEST_LIMIT} free prompt optimizations.',
+            'remaining_requests': remaining,
+            'total_limit': ANONYMOUS_REQUEST_LIMIT,
+            'requires_login': True
+        }
+    
+    remaining = ANONYMOUS_REQUEST_LIMIT - request_count
+    return True, {
+        'remaining_requests': remaining,
+        'total_limit': ANONYMOUS_REQUEST_LIMIT
+    }
+
+def increment_anonymous_request():
+    """Increment anonymous user request count"""
+    if current_user.is_authenticated:
+        return  # Don't track authenticated users
+    
+    anonymous_id = get_anonymous_user_id()
+    anonymous_requests[anonymous_id] = anonymous_requests.get(anonymous_id, 0) + 1
 
 # Pinecone configuration
 pc = None
@@ -270,28 +337,72 @@ def health_check():
     """Health check endpoint"""
     return jsonify({"status": "healthy", "message": "Prompt Optimizer API is running"})
 
+@app.route('/api/check-requests', methods=['GET'])
+def check_requests():
+    """Check remaining requests for current user"""
+    try:
+        if current_user.is_authenticated:
+            return jsonify({
+                'is_authenticated': True,
+                'unlimited': True,
+                'message': 'Authenticated users have unlimited access'
+            })
+        
+        # Check anonymous user requests
+        is_allowed, limit_info = check_anonymous_request_limit()
+        
+        if is_allowed:
+            return jsonify({
+                'is_authenticated': False,
+                'unlimited': False,
+                'remaining_requests': limit_info['remaining_requests'],
+                'total_limit': limit_info['total_limit'],
+                'message': f'You have {limit_info["remaining_requests"]} free prompt optimizations remaining'
+            })
+        else:
+            return jsonify({
+                'is_authenticated': False,
+                'unlimited': False,
+                'remaining_requests': 0,
+                'total_limit': limit_info['total_limit'],
+                'message': limit_info['message'],
+                'requires_login': True
+            })
+            
+    except Exception as e:
+        logger.error(f"Error checking requests: {e}")
+        return jsonify({'error': 'Failed to check request status'}), 500
+
 @app.route('/api/optimize', methods=['POST'])
 def optimize_prompt():
-    """Main endpoint for prompt optimization"""
+    """Main prompt optimization endpoint"""
     try:
-        setup_pinecone_and_vectorstore()
-        
         data = request.get_json()
-        user_prompt = data.get('prompt', '')
-        context = data.get('context', 'general')
+        if not data or 'prompt' not in data:
+            return jsonify({'error': 'No prompt provided'}), 400
         
+        user_prompt = data['prompt'].strip()
         if not user_prompt:
-            return jsonify({"error": "Prompt is required"}), 400
+            return jsonify({'error': 'Prompt cannot be empty'}), 400
         
+        context = data.get('context', 'general')
         if context not in context_strategies:
             context = "general"
+        
+        # Check anonymous request limit
+        is_allowed, limit_info = check_anonymous_request_limit()
+        if not is_allowed:
+            return jsonify(limit_info), 403
+        
+        # Increment anonymous request count
+        increment_anonymous_request()
         
         result = apply_strategy(user_prompt, context)
         return jsonify(result)
         
     except Exception as e:
-        logger.error(f"Error optimizing prompt: {e}")
-        return jsonify({"error": "Failed to optimize prompt"}), 500
+        logger.error(f"Error in optimize_prompt: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 @app.route('/api/strategies', methods=['GET'])
 def get_strategies():
