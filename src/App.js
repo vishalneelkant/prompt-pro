@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
-import Login from './components/Login';
-import Signup from './components/Signup';
 
 function App() {
   const [messages, setMessages] = useState([]);
@@ -10,31 +8,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [context, setContext] = useState('general');
   const [copyFeedback, setCopyFeedback] = useState({ show: false, message: '', type: '' });
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
-  const [requestInfo, setRequestInfo] = useState({
-    remaining: 3,
-    total: 3,
-    isAuthenticated: false,
-    unlimited: false
-  });
   const messagesEndRef = useRef(null);
-
-  // Check for existing auth token on component mount
-  useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    const savedUser = localStorage.getItem('user');
-    
-    if (token && savedUser) {
-      // Verify token with backend
-      verifyToken(token);
-    } else {
-      // Check anonymous request status
-      checkRequestStatus();
-    }
-  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -44,131 +18,9 @@ function App() {
     scrollToBottom();
   }, [messages]);
 
-  const checkRequestStatus = async () => {
-    try {
-      const response = await axios.get('/api/check-requests');
-      setRequestInfo({
-        remaining: response.data.remaining_requests || 0,
-        total: response.data.total_limit || 3,
-        isAuthenticated: response.data.is_authenticated || false,
-        unlimited: response.data.unlimited || false
-      });
-    } catch (error) {
-      console.error('Error checking request status:', error);
-      // Set default values
-      setRequestInfo({
-        remaining: 3,
-        total: 3,
-        isAuthenticated: false,
-        unlimited: false
-      });
-    }
-  };
-
-  const verifyToken = async (token) => {
-    try {
-      const response = await axios.post('/api/auth/verify-token', { token });
-      if (response.data.valid) {
-        setUser(response.data.user);
-        setIsLoggedIn(true);
-        // Set axios default header for future requests
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        // Update request info for authenticated users
-        setRequestInfo(prev => ({
-          ...prev,
-          isAuthenticated: true,
-          unlimited: true
-        }));
-      } else {
-        // Token is invalid, clear storage
-        handleLogout();
-      }
-    } catch (error) {
-      console.error('Token verification failed:', error);
-      handleLogout();
-    }
-  };
-
-  const handleLogin = (userData, token) => {
-    setUser(userData);
-    setIsLoggedIn(true);
-    setShowAuthModal(false);
-    setAuthMode('login');
-    // Set axios default header for future requests
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    // Update request info for authenticated users
-    setRequestInfo(prev => ({
-      ...prev,
-      isAuthenticated: true,
-      unlimited: true
-    }));
-  };
-
-  const handleSignup = (userData, token) => {
-    setUser(userData);
-    setIsLoggedIn(true);
-    setShowAuthModal(false);
-    setAuthMode('signup');
-    // Set axios default header for future requests
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    // Update request info for authenticated users
-    setRequestInfo(prev => ({
-      ...prev,
-      isAuthenticated: true,
-      unlimited: true
-    }));
-  };
-
-  const handleLogout = async () => {
-    try {
-      // Call logout endpoint if user is logged in
-      if (isLoggedIn) {
-        await axios.post('/api/auth/logout');
-      }
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      // Clear local state and storage
-      setUser(null);
-      setIsLoggedIn(false);
-      setShowAuthModal(false);
-      setAuthMode('login');
-      
-      // Clear localStorage
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      
-      // Remove axios default header
-      delete axios.defaults.headers.common['Authorization'];
-      
-      // Reset request info for anonymous users
-      checkRequestStatus();
-    }
-  };
-
-  const openAuthModal = (mode = 'login') => {
-    setAuthMode(mode);
-    setShowAuthModal(true);
-  };
-
-  const closeAuthModal = () => {
-    setShowAuthModal(false);
-    setAuthMode('login');
-  };
-
-  const switchAuthMode = () => {
-    setAuthMode(authMode === 'login' ? 'signup' : 'login');
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
-
-    // Check if user can make requests
-    if (!isLoggedIn && requestInfo.remaining <= 0) {
-      openAuthModal('login');
-      return;
-    }
 
     const userMessage = {
       id: Date.now(),
@@ -181,6 +33,8 @@ function App() {
     setIsLoading(true);
 
     try {
+      // Use relative path for Vercel and local
+      //const apiBase = process.env.REACT_APP_API_BASE_URL || window.location.origin;
       const response = await axios.post('/api/optimize', {
         prompt: inputValue,
         context: context
@@ -196,44 +50,12 @@ function App() {
       };
 
       setMessages(prev => [...prev, assistantMessage]);
-      
-      // Update request count for anonymous users
-      if (!isLoggedIn) {
-        const newRemaining = Math.max(0, requestInfo.remaining - 1);
-        setRequestInfo(prev => ({
-          ...prev,
-          remaining: newRemaining
-        }));
-        
-        // If this was the last request, automatically show login modal
-        if (newRemaining === 0) {
-          // Show a brief notification
-          setCopyFeedback({
-            show: true,
-            message: 'You\'ve used all 3 free optimizations. Login to continue!',
-            type: 'info'
-          });
-          
-          // Show login modal after 2 seconds
-          setTimeout(() => {
-            openAuthModal('login');
-          }, 2000);
-        }
-      }
-      
     } catch (error) {
       console.error('Error optimizing prompt:', error);
-      
-      // Handle request limit reached error
-      if (error.response?.status === 403 && error.response?.data?.requires_login) {
-        setShowAuthModal(true);
-        setAuthMode('login');
-      }
-      
       const errorMessage = {
         id: Date.now() + 1,
         type: 'assistant',
-        content: error.response?.data?.message || 'Sorry, I encountered an error while optimizing your prompt. Please try again.',
+        content: 'Sorry, I encountered an error while optimizing your prompt. Please try again.',
         timestamp: new Date().toLocaleTimeString(),
         isError: true
       };
@@ -312,46 +134,11 @@ function App() {
 
   return (
     <div className="app">
-      {/* Navigation Bar */}
-      <nav className="navbar">
-        <div className="nav-container">
-          <div className="nav-logo">
-            <div className="logo-icon">⚡</div>
-            <span className="logo-text">PromptPro</span>
-          </div>
-          
-          <div className="nav-links">
-            <a href="#" className="nav-link">Home</a>
-            <a href="#" className="nav-link">Library</a>
-            <a href="#" className="nav-link">Pricing</a>
-            {isLoggedIn ? (
-              <div className="user-section">
-                <span className="user-name">Hi, {user?.name}</span>
-                <button 
-                  className="nav-button logout"
-                  onClick={handleLogout}
-                >
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <button 
-                className="nav-button login"
-                onClick={() => openAuthModal('login')}
-              >
-                Login
-              </button>
-            )}
-          </div>
-        </div>
-      </nav>
-
       {/* Copy Feedback Toast */}
       {copyFeedback.show && (
         <div className={`copy-feedback ${copyFeedback.type}`}>
           <div className="feedback-icon">
-            {copyFeedback.type === 'success' ? '✅' : 
-             copyFeedback.type === 'error' ? '❌' : 'ℹ️'}
+            {copyFeedback.type === 'success' ? '✅' : '❌'}
           </div>
           <span className="feedback-message">{copyFeedback.message}</span>
         </div>
@@ -360,6 +147,13 @@ function App() {
       <div className="app-container">
         {/* Left Panel - Input */}
         <div className="left-panel">
+          <div className="panel-header">
+            <div className="logo">
+              <div className="logo-icon">⚡</div>
+              <span className="logo-text">PromptPro</span>
+            </div>
+          </div>
+          
           <div className="input-section">
             <h1 className="main-title">
               {context === 'rephrase' 
@@ -380,7 +174,7 @@ function App() {
                       ? "e.g., i recieve ur messege and will definately respond"
                       : "e.g., Write a business plan for an AI startup in fintech."
                   }
-                  disabled={isLoading || (!isLoggedIn && requestInfo.remaining <= 0)}
+                  disabled={isLoading}
                   rows={4}
                 />
               </div>
@@ -390,7 +184,6 @@ function App() {
                   className="context-dropdown"
                   value={context}
                   onChange={(e) => setContext(e.target.value)}
-                  disabled={isLoading || (!isLoggedIn && requestInfo.remaining <= 0)}
                 >
                   <option value="general">Select context</option>
                   <option value="business">Business</option>
@@ -406,13 +199,11 @@ function App() {
               <button
                 type="submit"
                 className="optimize-button"
-                disabled={!inputValue.trim() || isLoading || (!isLoggedIn && requestInfo.remaining <= 0)}
+                disabled={!inputValue.trim() || isLoading}
               >
                 {isLoading 
                   ? (context === 'rephrase' ? 'Correcting...' : 'Optimizing...') 
-                  : (!isLoggedIn && requestInfo.remaining <= 0)
-                    ? 'Login Required'
-                    : (context === 'rephrase' ? 'Correct Text' : 'Optimize Prompt')
+                  : (context === 'rephrase' ? 'Correct Text' : 'Optimize Prompt')
                 }
               </button>
             </form>
@@ -513,25 +304,6 @@ function App() {
           )}
         </div>
       </div>
-
-      {/* Authentication Modals */}
-      {showAuthModal && (
-        <>
-          {authMode === 'login' ? (
-            <Login
-              onLogin={handleLogin}
-              onSwitchToSignup={switchAuthMode}
-              onClose={closeAuthModal}
-            />
-          ) : (
-            <Signup
-              onSignup={handleSignup}
-              onSwitchToLogin={switchAuthMode}
-              onClose={closeAuthModal}
-            />
-          )}
-        </>
-      )}
     </div>
   );
 }
