@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import './App.css';
 import Login from './components/Login';
@@ -27,57 +27,67 @@ function App() {
   }, [messages]);
 
   const handleMouseDown = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     setIsResizing(true);
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  };
-
-  const handleMouseMove = (e) => {
-    if (!isResizing) return;
     
-    const container = e.currentTarget.parentElement;
-    const rect = container.getBoundingClientRect();
-    const newLeftWidth = ((e.clientX - rect.left) / rect.width) * 100;
+    const startResize = (moveEvent) => {
+      // Get the app-container element
+      const container = document.querySelector('.app-container');
+      if (!container) return;
+      
+      const rect = container.getBoundingClientRect();
+      const mouseX = moveEvent.clientX - rect.left;
+      const newLeftWidth = (mouseX / rect.width) * 100;
+      
+      // Limit the width between 20% and 80%
+      if (newLeftWidth >= 20 && newLeftWidth <= 80) {
+        setLeftPanelWidth(newLeftWidth);
+      }
+    };
     
-    // Limit the width between 20% and 80%
-    if (newLeftWidth >= 20 && newLeftWidth <= 80) {
-      setLeftPanelWidth(newLeftWidth);
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsResizing(false);
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
+    const stopResize = () => {
+      setIsResizing(false);
+      document.removeEventListener('mousemove', startResize);
+      document.removeEventListener('mouseup', stopResize);
+    };
+    
+    document.addEventListener('mousemove', startResize);
+    document.addEventListener('mouseup', stopResize);
   };
 
   // Touch event handlers for mobile devices
   const handleTouchStart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     setIsResizing(true);
-    document.addEventListener('touchmove', handleTouchMove, { passive: false });
-    document.addEventListener('touchend', handleTouchEnd);
-  };
-
-  const handleTouchMove = (e) => {
-    if (!isResizing) return;
     
-    e.preventDefault(); // Prevent scrolling while resizing
+    const startTouchResize = (touchEvent) => {
+      touchEvent.preventDefault(); // Prevent scrolling while resizing
+      
+      const touch = touchEvent.touches[0];
+      // Get the app-container element
+      const container = document.querySelector('.app-container');
+      if (!container) return;
+      
+      const rect = container.getBoundingClientRect();
+      const touchX = touch.clientX - rect.left;
+      const newLeftWidth = (touchX / rect.width) * 100;
+      
+      // Limit the width between 20% and 80%
+      if (newLeftWidth >= 20 && newLeftWidth <= 80) {
+        setLeftPanelWidth(newLeftWidth);
+      }
+    };
     
-    const touch = e.touches[0];
-    const container = e.currentTarget.parentElement;
-    const rect = container.getBoundingClientRect();
-    const newLeftWidth = ((touch.clientX - rect.left) / rect.width) * 100;
+    const stopTouchResize = () => {
+      setIsResizing(false);
+      document.removeEventListener('touchmove', startTouchResize);
+      document.removeEventListener('touchend', stopTouchResize);
+    };
     
-    // Limit the width between 20% and 80%
-    if (newLeftWidth >= 20 && newLeftWidth <= 80) {
-      setLeftPanelWidth(newLeftWidth);
-    }
-  };
-
-  const handleTouchEnd = () => {
-    setIsResizing(false);
-    document.removeEventListener('touchmove', handleTouchMove);
-    document.removeEventListener('touchend', handleTouchEnd);
+    document.addEventListener('touchmove', startTouchResize, { passive: false });
+    document.addEventListener('touchend', stopTouchResize);
   };
 
   const handleLoginLogout = () => {
@@ -282,7 +292,7 @@ function App() {
 
       <div className={`app-container ${isResizing ? 'resizing' : ''}`}>
         {/* Left Panel - Input */}
-        <div className="left-panel" style={{ width: `${leftPanelWidth}%` }}>
+        <div className="left-panel" style={{ flex: `0 0 ${leftPanelWidth}%` }}>
           <div className="input-section">
             <h1 className="main-title">
               {context === 'rephrase' 
@@ -353,7 +363,7 @@ function App() {
         </div>
 
         {/* Right Panel - Output */}
-        <div className="right-panel" style={{ width: `${100 - leftPanelWidth}%` }}>
+        <div className="right-panel" style={{ flex: `0 0 ${100 - leftPanelWidth}%` }}>
           <div className="output-header">
             <h2>{context === 'rephrase' ? 'Corrected Text' : 'Optimized Prompt'}</h2>
           </div>

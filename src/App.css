@@ -240,7 +240,7 @@ body {
   display: flex;
   flex-direction: column;
   padding: 0;
-  min-width: 300px;
+  min-width: 200px;
   max-width: 80%;
 }
 
@@ -338,7 +338,6 @@ body {
 
 /* Right Panel Styles */
 .right-panel {
-  flex: 1;
   background-color: #f9fafb;
   display: flex;
   flex-direction: column;
@@ -593,7 +592,7 @@ body {
 }
 
 /* Mobile responsiveness */
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
   .app-container {
     flex-direction: column;
   }
