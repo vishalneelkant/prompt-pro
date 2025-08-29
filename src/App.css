@@ -15,6 +15,106 @@ body {
   line-height: 1.6;
 }
 
+/* Navigation Bar Styles */
+.navbar {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 64px;
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-logo .logo-icon {
+  font-size: 24px;
+  color: #3b82f6;
+}
+
+.nav-logo .logo-text {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #374151;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: color 0.2s ease;
+  padding: 8px 0;
+}
+
+.nav-link:hover {
+  color: #3b82f6;
+}
+
+.nav-button {
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background-color: #ffffff;
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-button.login {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.nav-button.login:hover {
+  background-color: #e5e7eb;
+}
+
+.nav-button.logout {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.nav-button.logout:hover {
+  background-color: #fee2e2;
+}
+
+.user-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-name {
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
+}
+
 .app {
   min-height: 100vh;
   display: flex;
@@ -73,46 +173,82 @@ body {
 
 .app-container {
   display: flex;
-  height: 100vh;
+  height: calc(100vh - 64px);
   max-width: 100%;
+}
+
+/* Resizable Divider Styles */
+.resizable-divider {
+  width: 8px;
+  background-color: #f3f4f6;
+  cursor: col-resize;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+.resizable-divider:hover {
+  background-color: #e5e7eb;
+}
+
+.resizable-divider.resizing {
+  background-color: #3b82f6;
+  cursor: col-resize;
+}
+
+.resizable-divider.resizing * {
+  pointer-events: none;
+}
+
+.divider-handle {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+}
+
+.handle-line {
+  width: 2px;
+  height: 20px;
+  background-color: #9ca3af;
+  border-radius: 1px;
+}
+
+.resizable-divider:hover .handle-line,
+.resizable-divider.resizing .handle-line {
+  background-color: #6b7280;
+}
+
+/* Prevent text selection during resize */
+.app-container.resizing {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 /* Left Panel Styles */
 .left-panel {
-  flex: 1;
   background-color: #ffffff;
   border-right: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
   padding: 0;
+  min-width: 300px;
+  max-width: 80%;
 }
 
-.panel-header {
-  padding: 24px 32px;
-  border-bottom: 1px solid #e5e7eb;
-  background-color: #ffffff;
-}
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.logo-icon {
-  font-size: 24px;
-  color: #3b82f6;
-}
-
-.logo-text {
-  font-size: 20px;
-  font-weight: 700;
-  color: #111827;
-}
 
 .input-section {
   flex: 1;
-  padding: 48px 32px;
+  padding: 64px 32px;
   display: flex;
   flex-direction: column;
   justify-content: center;

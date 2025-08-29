@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
+import Login from './components/Login';
+import Signup from './components/Signup';
 
 function App() {
   const [messages, setMessages] = useState([]);
@@ -8,6 +10,12 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [context, setContext] = useState('general');
   const [copyFeedback, setCopyFeedback] = useState({ show: false, message: '', type: '' });
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
+  const [user, setUser] = useState(null);
+  const [leftPanelWidth, setLeftPanelWidth] = useState(50); // Percentage width
+  const [isResizing, setIsResizing] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -17,6 +25,100 @@ function App() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const handleMouseDown = (e) => {
+    setIsResizing(true);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isResizing) return;
+    
+    const container = e.currentTarget.parentElement;
+    const rect = container.getBoundingClientRect();
+    const newLeftWidth = ((e.clientX - rect.left) / rect.width) * 100;
+    
+    // Limit the width between 20% and 80%
+    if (newLeftWidth >= 20 && newLeftWidth <= 80) {
+      setLeftPanelWidth(newLeftWidth);
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsResizing(false);
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  };
+
+  // Touch event handlers for mobile devices
+  const handleTouchStart = (e) => {
+    setIsResizing(true);
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isResizing) return;
+    
+    e.preventDefault(); // Prevent scrolling while resizing
+    
+    const touch = e.touches[0];
+    const container = e.currentTarget.parentElement;
+    const rect = container.getBoundingClientRect();
+    const newLeftWidth = ((touch.clientX - rect.left) / rect.width) * 100;
+    
+    // Limit the width between 20% and 80%
+    if (newLeftWidth >= 20 && newLeftWidth <= 80) {
+      setLeftPanelWidth(newLeftWidth);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsResizing(false);
+    document.removeEventListener('touchmove', handleTouchMove);
+    document.removeEventListener('touchend', handleTouchEnd);
+  };
+
+  const handleLoginLogout = () => {
+    if (isLoggedIn) {
+      // Logout
+      setIsLoggedIn(false);
+      setUser(null);
+    } else {
+      // Show login modal
+      setAuthMode('login');
+      setShowAuthModal(true);
+    }
+  };
+
+  const handleLogin = (userData) => {
+    setUser(userData);
+    setIsLoggedIn(true);
+    setShowAuthModal(false);
+    setAuthMode('login');
+  };
+
+  const handleSignup = (userData) => {
+    setUser(userData);
+    setIsLoggedIn(true);
+    setShowAuthModal(false);
+    setAuthMode('signup');
+  };
+
+  const openAuthModal = (mode = 'login') => {
+    setAuthMode(mode);
+    setShowAuthModal(true);
+  };
+
+  const closeAuthModal = () => {
+    setShowAuthModal(false);
+    setAuthMode('login');
+  };
+
+  const switchAuthMode = () => {
+    setAuthMode(authMode === 'login' ? 'signup' : 'login');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -134,7 +236,41 @@ function App() {
 
   return (
     <div className="app">
-      {/* Copy Feedback Toast */}
+      {/* Navigation Bar */}
+      <nav className="navbar">
+        <div className="nav-container">
+          <div className="nav-logo">
+            <div className="logo-icon">⚡</div>
+            <span className="logo-text">PromptPro</span>
+          </div>
+          
+          <div className="nav-links">
+            <a href="#" className="nav-link">Home</a>
+            <a href="#" className="nav-link">Library</a>
+            <a href="#" className="nav-link">Pricing</a>
+            {isLoggedIn ? (
+              <div className="user-section">
+                <span className="user-name">Hi, {user?.name}</span>
+                <button 
+                  className="nav-button logout"
+                  onClick={handleLoginLogout}
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <button 
+                className="nav-button login"
+                onClick={handleLoginLogout}
+              >
+                Login
+              </button>
+            )}
+          </div>
+        </div>
+      </nav>
+
+            {/* Copy Feedback Toast */}
       {copyFeedback.show && (
         <div className={`copy-feedback ${copyFeedback.type}`}>
           <div className="feedback-icon">
@@ -144,16 +280,9 @@ function App() {
         </div>
       )}
 
-      <div className="app-container">
+      <div className={`app-container ${isResizing ? 'resizing' : ''}`}>
         {/* Left Panel - Input */}
-        <div className="left-panel">
-          <div className="panel-header">
-            <div className="logo">
-              <div className="logo-icon">⚡</div>
-              <span className="logo-text">PromptPro</span>
-            </div>
-          </div>
-          
+        <div className="left-panel" style={{ width: `${leftPanelWidth}%` }}>
           <div className="input-section">
             <h1 className="main-title">
               {context === 'rephrase' 
@@ -210,8 +339,21 @@ function App() {
           </div>
         </div>
 
+        {/* Resizable Divider */}
+        <div 
+          className={`resizable-divider ${isResizing ? 'resizing' : ''}`}
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+        >
+          <div className="divider-handle">
+            <div className="handle-line"></div>
+            <div className="handle-line"></div>
+            <div className="handle-line"></div>
+          </div>
+        </div>
+
         {/* Right Panel - Output */}
-        <div className="right-panel">
+        <div className="right-panel" style={{ width: `${100 - leftPanelWidth}%` }}>
           <div className="output-header">
             <h2>{context === 'rephrase' ? 'Corrected Text' : 'Optimized Prompt'}</h2>
           </div>
@@ -304,6 +446,25 @@ function App() {
           )}
         </div>
       </div>
+
+      {/* Authentication Modals */}
+      {showAuthModal && (
+        <>
+          {authMode === 'login' ? (
+            <Login
+              onLogin={handleLogin}
+              onSwitchToSignup={switchAuthMode}
+              onClose={closeAuthModal}
+            />
+          ) : (
+            <Signup
+              onSignup={handleSignup}
+              onSwitchToLogin={switchAuthMode}
+              onClose={closeAuthModal}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 }
