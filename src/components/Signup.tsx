@@ -1,24 +1,49 @@
 import React, { useState } from 'react';
 import './Auth.css';
 
-const Signup = ({ onSignup, onSwitchToLogin, onClose }) => {
-  const [formData, setFormData] = useState({
+interface User {
+  name: string;
+  email: string;
+}
+
+interface SignupProps {
+  onSignup: (userData: User) => void;
+  onSwitchToLogin: () => void;
+  onClose: () => void;
+}
+
+interface FormData {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+interface FormErrors {
+  name?: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+}
+
+const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onClose }) => {
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
     password: '',
     confirmPassword: ''
   });
-  const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
     // Clear error when user starts typing
-    if (errors[name]) {
+    if (errors[name as keyof FormErrors]) {
       setErrors(prev => ({
         ...prev,
         [name]: ''
@@ -26,8 +51,8 @@ const Signup = ({ onSignup, onSwitchToLogin, onClose }) => {
     }
   };
 
-  const validateForm = () => {
-    const newErrors = {};
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
 
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
@@ -57,7 +82,7 @@ const Signup = ({ onSignup, onSwitchToLogin, onClose }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     
     if (!validateForm()) {
