@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "buildCommand": "npm run vercel-build",
   "builds": [
     {
       "src": "package.json",
@@ -26,7 +27,9 @@
   },
   "build": {
     "env": {
-      "NPM_FLAGS": "--legacy-peer-deps"
+      "NPM_FLAGS": "--legacy-peer-deps",
+      "NODE_VERSION": "18.x"
     }
-  }
+  },
+  "installCommand": "npm install --legacy-peer-deps"
 }
