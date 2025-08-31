@@ -22,6 +22,9 @@ import './App.css';
 import Login from './components/Login';
 import Signup from './components/Signup';
 
+// Debug: Log to console to verify the component is loading
+console.log('App.tsx is loading successfully!');
+
 // ============================================================================
 // TYPE DEFINITIONS
 // ============================================================================
@@ -294,6 +297,7 @@ const App: React.FC = () => {
    * Opens the authentication modal with specified mode
    * @param mode - Authentication mode ('login' or 'signup')
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const openAuthModal = (mode: AuthMode = 'login'): void => {
     setAuthMode(mode);
     setShowAuthModal(true);
@@ -462,6 +466,7 @@ const App: React.FC = () => {
    * Used for extracting the optimization result for display
    * @returns The optimized prompt text or null if no valid message exists
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getLatestOptimizedPrompt = (): string | null => {
     const lastMessage = messages[messages.length - 1];
     return lastMessage && lastMessage.type === 'assistant' && !lastMessage.isError 
