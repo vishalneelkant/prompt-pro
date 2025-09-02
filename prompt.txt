@@ -1,0 +1,16 @@
+## Act as Expert Software developer
+
+## Complete the user story, use proper coding standard, Make sure everything is working
+
+## User Story 
+Create a Nav bar on UI, Nav should have below options
+Home - It should redirect to the home page
+About - Create a new page which contains the details about the application, Have basic details about the application.
+Library - As of now make it do nothing
+Pricing - Create a new page which contains the price details of the application, Provide basic cost for the application
+Login - Provide popup to login to the application, login contains - email, password
+
+
+Understand the requirements, Before coding first analyze the problem statement, Once analysis is done then 
+Create a plan to implement the requirements then code according to the detail design. 
+
