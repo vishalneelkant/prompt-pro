@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import SEO from '../components/SEO';
+import StructuredData, { pricingPageSchema } from '../components/StructuredData';
 import './Pricing.css';
 
 const Pricing = () => {
@@ -71,7 +73,15 @@ const Pricing = () => {
   };
 
   return (
-    <div className="pricing">
+    <>
+      <SEO 
+        title="Pricing Plans - Affordable AI Prompt Optimization"
+        description="Choose the perfect PromptVita plan for your needs. Free plan available! Pro at $5/month, Enterprise at $9/month. AI-powered prompt optimization for everyone."
+        keywords="promptvita pricing, prompt optimization pricing, AI writing tool cost, prompt engineering plans, affordable AI tools, prompt optimizer subscription"
+        canonical="https://www.promptvita.com/pricing"
+      />
+      <StructuredData data={pricingPageSchema} />
+      <div className="pricing">
       <div className="pricing-container">
         <div className="pricing-hero">
           <h1>Simple, Transparent Pricing</h1>
@@ -160,7 +170,7 @@ const Pricing = () => {
 
         <div className="pricing-cta">
           <h2>Ready to Get Started?</h2>
-          <p>Join thousands of users who are already optimizing their prompts with PromptPro.</p>
+          <p>Join thousands of users who are already optimizing their prompts with PromptVita.</p>
           <div className="cta-buttons">
             <a href="/" className="cta-button primary">Start Free Trial</a>
             <button className="cta-button secondary" onClick={() => alert('Contact sales functionality not implemented yet')}>Contact Sales</button>
@@ -168,6 +178,7 @@ const Pricing = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

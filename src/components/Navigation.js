@@ -27,7 +27,7 @@ const Navigation = () => {
           {/* Logo */}
           <Link to="/" className="nav-logo">
             <div className="nav-logo-icon">⚡</div>
-            <span className="nav-logo-text">PromptPro</span>
+            <span className="nav-logo-text">PromptVita</span>
           </Link>
 
           {/* Navigation Menu */}
