@@ -43,7 +43,7 @@ const LoginModal = ({ onClose }) => {
     <div className="login-modal-overlay" onClick={handleOverlayClick}>
       <div className="login-modal">
         <div className="login-modal-header">
-          <h2>Login to PromptPro</h2>
+          <h2>Login to PromptVita</h2>
           <button className="close-button" onClick={onClose}>
             ×
           </button>

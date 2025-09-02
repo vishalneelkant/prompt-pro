@@ -1,13 +1,23 @@
 import React from 'react';
+import SEO from '../components/SEO';
+import StructuredData, { aboutPageSchema } from '../components/StructuredData';
 import './About.css';
 
 const About = () => {
   return (
-    <div className="about">
+    <>
+      <SEO 
+        title="About PromptVita - AI-Powered Prompt Optimization Platform"
+        description="Learn about PromptVita's mission to democratize prompt engineering. Discover how our AI-powered platform helps users create better prompts and improve AI interactions."
+        keywords="about promptvita, prompt engineering platform, AI optimization tool, prompt improvement, AI writing assistant, prompt enhancement service"
+        canonical="https://www.promptvita.com/about"
+      />
+      <StructuredData data={aboutPageSchema} />
+      <div className="about">
       <div className="about-container">
         <div className="about-hero">
           <div className="hero-icon">⚡</div>
-          <h1>About PromptPro</h1>
+          <h1>About PromptVita</h1>
           <p className="hero-subtitle">
             Transform your messy prompts into powerful AI instructions with our intelligent optimization platform.
           </p>
@@ -73,7 +83,7 @@ const About = () => {
           <div className="about-mission">
             <h2>Our Mission</h2>
             <p>
-              At PromptPro, we believe that effective communication with AI starts with well-crafted prompts. 
+              At PromptVita, we believe that effective communication with AI starts with well-crafted prompts. 
               Our mission is to democratize prompt engineering by making it accessible to everyone, regardless 
               of their technical background. We're committed to helping users unlock the full potential of AI 
               through better prompts.
@@ -101,12 +111,13 @@ const About = () => {
 
           <div className="about-cta">
             <h2>Ready to Optimize Your Prompts?</h2>
-            <p>Join thousands of users who have already improved their AI interactions with PromptPro.</p>
+            <p>Join thousands of users who have already improved their AI interactions with PromptVita.</p>
             <a href="/" className="cta-button">Start Optimizing</a>
           </div>
         </div>
       </div>
     </div>
+    </>
   );
 };
 

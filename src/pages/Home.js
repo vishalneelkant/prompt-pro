@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
+import SEO from '../components/SEO';
+import StructuredData, { homePageSchema } from '../components/StructuredData';
 import './Home.css';
 
 const Home = () => {
@@ -118,7 +120,15 @@ const Home = () => {
   const latestMessage = getLatestMessage();
 
   return (
-    <div className="home">
+    <>
+      <SEO 
+        title="AI Prompt Optimizer & Grammar Checker"
+        description="Transform messy prompts into powerful AI instructions. Free AI-powered prompt optimization, grammar correction, and professional text enhancement. Multiple contexts available."
+        keywords="prompt optimizer, AI prompts, ChatGPT prompts, prompt engineering, grammar checker, text correction, AI writing assistant, prompt enhancer"
+        canonical="https://www.promptvita.com/"
+      />
+      <StructuredData data={homePageSchema} />
+      <div className="home">
       {/* Copy Feedback Toast */}
       {copyFeedback.show && (
         <div className={`copy-feedback ${copyFeedback.type}`}>
@@ -279,6 +289,7 @@ const Home = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
