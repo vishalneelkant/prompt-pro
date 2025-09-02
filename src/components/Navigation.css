@@ -1,0 +1,136 @@
+.navigation {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+
+/* Logo Styles */
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.2s ease;
+}
+
+.nav-logo:hover {
+  opacity: 0.8;
+}
+
+.nav-logo-icon {
+  font-size: 24px;
+  color: #3b82f6;
+}
+
+.nav-logo-text {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* Navigation Menu */
+.nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.nav-item {
+  font-size: 16px;
+  font-weight: 500;
+  color: #6b7280;
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+.nav-item:hover {
+  color: #111827;
+  background-color: #f9fafb;
+}
+
+.nav-item.active {
+  color: #3b82f6;
+  background-color: #eff6ff;
+}
+
+.nav-login-btn, .nav-library-btn {
+  background-color: #3b82f6;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.nav-library-btn {
+  background-color: transparent;
+  color: #6b7280;
+}
+
+.nav-login-btn:hover {
+  background-color: #2563eb;
+  color: white;
+}
+
+.nav-library-btn:hover {
+  background-color: #f9fafb;
+  color: #111827;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .nav-container {
+    padding: 0 16px;
+    height: 56px;
+  }
+  
+  .nav-menu {
+    gap: 16px;
+  }
+  
+  .nav-item {
+    font-size: 14px;
+    padding: 6px 12px;
+  }
+  
+  .nav-logo-text {
+    font-size: 18px;
+  }
+  
+  .nav-logo-icon {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .nav-menu {
+    gap: 8px;
+  }
+  
+  .nav-item {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+  
+  .nav-login-btn {
+    padding: 8px 16px;
+  }
+}
