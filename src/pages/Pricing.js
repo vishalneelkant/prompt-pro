@@ -146,25 +146,56 @@ const Pricing = () => {
           ))}
         </div>
 
+        {/* Trust / Guarantee Strip */}
+        <div className="trust-strip" role="note" aria-label="Trust and guarantee">
+          <div className="trust-item">✅ 7‑day money‑back guarantee</div>
+          <div className="trust-dot">•</div>
+          <div className="trust-item">🔒 Secure payments</div>
+          <div className="trust-dot">•</div>
+          <div className="trust-item">📞 Priority support on Pro & Enterprise</div>
+        </div>
+
+        {/* Compact Feature Comparison */}
+        <div className="comparison">
+          <h3>Compare features</h3>
+          <div className="comparison-table" role="table" aria-label="Pricing comparison">
+            <div className="row header" role="row">
+              <div className="cell" role="columnheader">Feature</div>
+              <div className="cell" role="columnheader">Free</div>
+              <div className="cell" role="columnheader">Pro</div>
+              <div className="cell" role="columnheader">Enterprise</div>
+            </div>
+            {[
+              ['Daily optimizations', '10', 'Unlimited', 'Unlimited'],
+              ['Optimization strategies', 'Basic', 'Advanced', 'Advanced + Custom'],
+              ['Response speed', 'Standard', 'Priority', 'Priority'],
+              ['Team collaboration', '—', '—', '✓'],
+              ['Shared libraries', '—', '✓', '✓']
+            ].map((r, i) => (
+              <div className="row" role="row" key={i}>
+                <div className="cell label" role="cell">{r[0]}</div>
+                <div className="cell" role="cell">{r[1]}</div>
+                <div className="cell" role="cell">{r[2]}</div>
+                <div className="cell" role="cell">{r[3]}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="pricing-faq">
           <h2>Frequently Asked Questions</h2>
-          <div className="faq-grid">
-            <div className="faq-item">
-              <h4>What counts as a prompt optimization?</h4>
-              <p>Each time you submit a prompt for optimization, it counts as one optimization. This includes both text correction and prompt enhancement.</p>
-            </div>
-            <div className="faq-item">
-              <h4>Can I change plans anytime?</h4>
-              <p>Yes, you can upgrade or downgrade your plan at any time. Changes will be reflected in your next billing cycle.</p>
-            </div>
-            <div className="faq-item">
-              <h4>Is there a free trial for Pro?</h4>
-              <p>Yes, we offer a 7-day free trial for the Pro plan. No credit card required to start your trial.</p>
-            </div>
-            <div className="faq-item">
-              <h4>What payment methods do you accept?</h4>
-              <p>We accept all major credit cards, PayPal, and bank transfers for Enterprise plans.</p>
-            </div>
+          <div className="faq-grid" role="region" aria-label="FAQs">
+            {[
+              ['What counts as a prompt optimization?', 'Each time you submit a prompt for optimization, it counts as one optimization. This includes both text correction and prompt enhancement.'],
+              ['Can I change plans anytime?', 'Yes, you can upgrade or downgrade your plan at any time. Changes will be reflected in your next billing cycle.'],
+              ['Is there a free trial for Pro?', 'Yes, we offer a 7-day free trial for the Pro plan. No credit card required to start your trial.'],
+              ['What payment methods do you accept?', 'We accept all major credit cards, PayPal, and bank transfers for Enterprise plans.']
+            ].map((faq, idx) => (
+              <details key={idx} className="faq-item">
+                <summary aria-expanded="false"><h4>{faq[0]}</h4></summary>
+                <p>{faq[1]}</p>
+              </details>
+            ))}
           </div>
         </div>
 

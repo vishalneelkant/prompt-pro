@@ -10,6 +10,7 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [context, setContext] = useState('general');
   const [copyFeedback, setCopyFeedback] = useState({ show: false, message: '', type: '' });
+  const [charCount, setCharCount] = useState(0);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -155,7 +156,7 @@ const Home = () => {
                 <textarea
                   className="input-field"
                   value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
+                  onChange={(e) => { setInputValue(e.target.value); setCharCount(e.target.value.length); }}
                   onKeyPress={handleKeyPress}
                   placeholder={
                     context === 'rephrase' 
@@ -165,6 +166,10 @@ const Home = () => {
                   disabled={isLoading}
                   rows={4}
                 />
+                <div className="counter-row">
+                  <span>Tip: Be specific about role, task, constraints, and examples.</span>
+                  <span>{charCount} chars</span>
+                </div>
               </div>
               
               <div className="input-group">
@@ -204,7 +209,13 @@ const Home = () => {
             <h2>{context === 'rephrase' ? 'Corrected Text' : 'Optimized Prompt'}</h2>
           </div>
           
-          {latestMessage && latestMessage.type === 'assistant' && !latestMessage.isError ? (
+          {isLoading ? (
+            <div className="prompt-output">
+              <div className="skeleton" style={{ width: '55%' }}></div>
+              <div className="skeleton" style={{ width: '85%', marginTop: 12 }}></div>
+              <div className="skeleton" style={{ width: '75%', marginTop: 12 }}></div>
+            </div>
+          ) : latestMessage && latestMessage.type === 'assistant' && !latestMessage.isError ? (
             <div className="prompt-output">
               <div 
                 className="copy-button" 
@@ -284,6 +295,16 @@ const Home = () => {
                   : 'Enter a prompt on the left to see the optimization here. Learn more on our About page or view plans on Pricing.'
                 }
               </p>
+              <div className="examples-bar">
+                {[
+                  'Role: Assistant • Task: Summarize this article',
+                  'Create 5 marketing headlines for eco-friendly bottles',
+                  'Rephrase this email in professional tone',
+                  'Write a product spec for a TODO app'
+                ].map((ex, i) => (
+                  <button key={i} className="example-chip" onClick={() => setInputValue(ex)}>{ex}</button>
+                ))}
+              </div>
             </div>
           )}
         </div>
