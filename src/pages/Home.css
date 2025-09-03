@@ -58,7 +58,7 @@
 
 .home-container {
   display: flex;
-  height: calc(100vh - 64px); /* Account for navigation */
+  min-height: calc(100vh - 64px); /* Allow growth so footer never overlaps */
   max-width: 100%;
 }
 
@@ -240,6 +240,7 @@
   flex: 1;
   padding: 32px;
   position: relative;
+  padding-bottom: 96px; /* ensure space above footer when content is long */
 }
 
 .copy-button {
