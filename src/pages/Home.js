@@ -145,8 +145,8 @@ const Home = () => {
           <div className="input-section">
             <h1 className="main-title">
               {context === 'rephrase' 
-                ? 'Turn messy text into polished, professional writing.' 
-                : 'Turn messy prompts into powerful AI instructions.'
+                ? 'PromptVita – Turn messy text into polished, professional writing.' 
+                : 'PromptVita – Turn messy prompts into powerful AI instructions.'
               }
             </h1>
             
@@ -281,7 +281,7 @@ const Home = () => {
               <p>
                 {context === 'rephrase' 
                   ? 'Enter text on the left to see the corrections here.' 
-                  : 'Enter a prompt on the left to see the optimization here.'
+                  : 'Enter a prompt on the left to see the optimization here. Learn more on our About page or view plans on Pricing.'
                 }
               </p>
             </div>
