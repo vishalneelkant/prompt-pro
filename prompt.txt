@@ -3,10 +3,23 @@
 ## Complete the user story, use proper coding standard, Make sure everything is working
 
 ## User Story 
-Scan the Pricing page, Optimize the Pricing page according to below
-1. Enhanche the look of the page
-2. Make it user friendly, Optimize spacing between the text according to user UI/UX recommendation
-3. Apply UI/UX design to make the page look more appeal and hold user attention.
+Application is hosted on www.promptvita.com which is not getting indexed on google due to below issue
+
+info
+Page indexing
+Page is not indexed: Crawled - currently not indexed
+Discovery
+Sitemaps
+No referring sitemaps detected
+Referring page
+None detected
+URL might be known from other sources that are currently not reported
+
+
+You need to address the mentioned issue, so that application is searcheable on google.com 
+
+
+
 
 Understand the requirements, Before coding first analyze the problem statement, Once analysis is done then 
 Create a plan to implement the requirements then code according to the detail design. 
