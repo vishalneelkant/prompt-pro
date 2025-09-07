@@ -45,7 +45,12 @@ docs = [
     "Color Harmony: Define color palette, contrast, saturation, color theory, and visual harmony principles.",
     "Negative Space Control: Specify what to avoid, exclude, or minimize for clean, focused image generation.",
     "Reference Integration: Incorporate specific artistic references, photography styles, cinematic techniques, and visual inspirations.",
-    "Iterative Refinement: Structure prompts for easy modification, allowing users to adjust specific elements while maintaining core vision."
+    "Iterative Refinement: Structure prompts for easy modification, allowing users to adjust specific elements while maintaining core vision.",
+      # 🚀 Vibe coding fallback strategies
+    "General feature prompting: Start with vibe PMing by restating the feature as a product spec, keep the tech stack simple, offer multiple solution options with pros/cons, recommend the simplest, break down the implementation into small iterative steps, suggest a test plan, and provide commit/diff outputs only when requested.",
+    "Refactor code prompting: Begin with a short spec of the intended improvement, preserve the existing API and tests, restrict scope to the specified files, propose 2–3 refactor strategies, outline an iterative plan, add or reuse tests, and deliver results as commit/diff format with a clear revert option.",
+    "Debug/Fix prompting: Restate the problem and symptoms, analyze root cause, propose minimal fixes, suggest adding failing and regression tests, outline stepwise plan, limit changes to specific files, return results as commit/diff only if requested, and finish with a plain-language explanation."
+
 ]
 
 # Context-specific strategy mappings
@@ -57,7 +62,13 @@ context_strategies = {
     "marketing": "Marketing prompting: Focus on audience engagement, persuasive language, and conversion optimization.",
     "image_generation": "Image generation prompting: Use vivid, descriptive language, specify visual elements, composition, style, mood, lighting, and artistic direction for AI image generation tools.",
     "video_generation": "Video generation prompting: Specify visual elements, motion, timing, scene transitions, camera movements, and narrative flow for AI video generation tools.",
-    "general": "General prompting: Use clear, direct language with specific instructions and expected outcomes."
+    "general": "General prompting: Use clear, direct language with specific instructions and expected outcomes.",
+    "cursor_code_optimizer": "Cursor Code Optimizer: Transform coding ideas into structured development prompts optimized for Cursor AI with clear product specs, simple tech stacks, multiple solution options with pros/cons, step-by-step implementation plans, and comprehensive testing strategies.",
+      # 🚀 Vibe coding strategies
+    "feature": "General feature prompting: Start with vibe PMing by restating the feature as a product spec, keep the tech stack simple, offer multiple solution options with pros/cons, recommend the simplest, break down the implementation into small iterative steps, suggest a test plan, and provide commit/diff outputs only when requested.",
+    "refactor": "Refactor code prompting: Begin with a short spec of the intended improvement, preserve the existing API and tests, restrict scope to the specified files, propose 2–3 refactor strategies, outline an iterative plan, add or reuse tests, and deliver results as commit/diff format with a clear revert option.",
+    "debug": "Debug/Fix prompting: Restate the problem and symptoms, analyze root cause, propose minimal fixes, suggest adding failing and regression tests, outline stepwise plan, limit changes to specific files, return results as commit/diff only if requested, and finish with a plain-language explanation."
+
 }
 
 # Context-specific instructions for different optimization types
@@ -66,7 +77,9 @@ context_instructions = {
     "technical": "Provide detailed technical explanations, include step-by-step processes, use precise terminology, technical specifications, and implementation guidance.",
     "image_generation": "Create world-class image generation prompts using structured prompting: Subject + Details + Style + Technical Specifications + Negative Prompts. Focus on clarity, control, creativity, and quality. Generate prompts that produce stunning, professional-grade images with maximum detail, artistic direction, and technical precision.",
     "video_generation": "Create world-class video generation prompts using structured prompting: Subject + Motion + Style + Technical Specifications + Negative Prompts. Focus on cinematic quality, smooth transitions, dynamic camera movements, and engaging visual storytelling. Generate prompts that produce professional-grade videos with maximum visual impact and narrative flow.",
-    "general": "Use clear, direct language with specific instructions and expected outcomes, include step-by-step guidance and comprehensive information."
+    "general": "Use clear, direct language with specific instructions and expected outcomes, include step-by-step guidance and comprehensive information.",
+    "cursor_code_optimizer" : "Cursor Code Optimizer: Transform coding ideas into structured development prompts optimized for Cursor AI with clear product specs, simple tech stacks, multiple solution options with pros/cons, step-by-step implementation plans, and comprehensive testing strategies."
+
 }
 
 # Lazy initialize components
@@ -154,6 +167,17 @@ def clean_prompt(prompt: str) -> str:
 
 def get_strategy_for_context(context: str, cleaned_prompt: str):
     """Get the best strategy based on context and prompt content"""
+    if context == "cursor_code_optimizer":
+        # Intelligent strategy selection for cursor code optimization based on prompt content
+        prompt_lower = cleaned_prompt.lower()
+        
+        if any(word in prompt_lower for word in ["bug", "error", "fix", "broken", "not working", "debug", "issue"]):
+            return context_strategies["debug"]
+        elif any(word in prompt_lower for word in ["refactor", "improve", "optimize", "clean up", "restructure", "reorganize"]):
+            return context_strategies["refactor"]
+        else:
+            return context_strategies["feature"]
+    
     context_strategy = context_strategies.get(context, context_strategies["general"])
     
     if retriever:
@@ -208,6 +232,27 @@ Original User Text: {cleaned_prompt}
 
 Return ONLY the corrected and optimized text with proper grammar, spelling, and clarity."""
 
+    elif context == "cursor_code_optimizer":
+        return f"""You are a Senior Software Developer and Prompt Engineering Expert specializing in Cursor AI optimization.
+
+Your task is to transform the user's coding idea into a comprehensive, structured development prompt optimized specifically for Cursor AI that follows best practices for AI-assisted development.
+
+STRATEGY APPLIED: {strategy}
+
+CURSOR CODE OPTIMIZATION FRAMEWORK:
+1. **Product Specification**: Restate the feature as a clear product spec with user stories and acceptance criteria
+2. **Technology Stack**: Recommend simple, proven technologies and explain the rationale
+3. **Solution Options**: Provide 2-3 implementation approaches with pros/cons analysis
+4. **Recommended Approach**: Select and justify the simplest, most maintainable solution
+5. **Implementation Plan**: Break down into small, iterative steps with clear milestones
+6. **Testing Strategy**: Outline comprehensive test plan including unit, integration, and user acceptance tests
+7. **Development Guidelines**: Include code quality standards and best practices
+8. **Risk Mitigation**: Identify potential issues and provide mitigation strategies
+
+ORIGINAL CODE REQUEST: {cleaned_prompt}
+
+Create a comprehensive, actionable development prompt optimized for Cursor AI that a developer can use to implement this feature successfully with AI assistance. Focus on clarity, practicality, maintainability, and optimal Cursor AI interaction patterns."""
+
     else:
         return f"""You are a Prompt Optimizer AI specializing in {context} content.
 
@@ -260,6 +305,21 @@ def apply_strategy(user_prompt: str, context: str = "general"):
         fallback_prompt = f"Create a detailed image of {cleaned_prompt} with vivid colors, clear composition, artistic style, and professional lighting. Include specific visual elements and mood."
     elif context == "video_generation":
         fallback_prompt = f"Generate a video of {cleaned_prompt} with smooth motion, clear scene transitions, dynamic camera movements, and engaging visual storytelling elements."
+    elif context == "cursor_code_optimizer":
+        fallback_prompt = f"""**Cursor-Optimized Code Request**: {cleaned_prompt}
+
+**Implementation Plan for Cursor AI**:
+1. Set up development environment with Cursor AI integration
+2. Create basic project structure with clear file organization
+3. Implement core functionality using AI-assisted development
+4. Add error handling and validation with AI suggestions
+5. Write comprehensive tests with AI-generated test cases
+6. Document the implementation with AI-enhanced documentation
+
+**Technology Stack**: Use modern, well-supported technologies optimized for AI assistance
+**Cursor AI Strategy**: Leverage AI for code generation, debugging, and optimization
+**Testing Strategy**: Include unit tests, integration tests, and user acceptance testing with AI assistance
+**Best Practices**: Follow coding standards, use version control, and implement proper error handling with Cursor AI guidance"""
     else:
         fallback_prompt = f"Please provide a detailed, {context}-focused response about: {cleaned_prompt}"
 

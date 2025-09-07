@@ -147,6 +147,8 @@ const Home = () => {
             <h1 className="main-title">
               {context === 'rephrase' 
                 ? 'PromptVita – Turn messy text into polished, professional writing.' 
+                : context === 'cursor_code_optimizer'
+                ? 'PromptVita – Optimize your code with AI-powered Cursor prompts.'
                 : 'PromptVita – Turn messy prompts into powerful AI instructions.'
               }
             </h1>
@@ -161,6 +163,8 @@ const Home = () => {
                   placeholder={
                     context === 'rephrase' 
                       ? "e.g., i recieve ur messege and will definately respond"
+                      : context === 'cursor_code_optimizer'
+                      ? "e.g., Add user authentication to my React app with login/signup forms"
                       : "e.g., Write a business plan for an AI startup in fintech."
                   }
                   disabled={isLoading}
@@ -179,11 +183,10 @@ const Home = () => {
                   onChange={(e) => setContext(e.target.value)}
                 >
                   <option value="general">Select context</option>
-                  <option value="business">Business</option>
+                  <option value="cursor_code_optimizer">🚀 Cursor Code Optimizer</option>
                   <option value="rephrase">Rephrase & Grammar</option>
                   <option value="technical">Technical</option>
                   <option value="academic">Academic</option>
-                  <option value="marketing">Marketing</option>
                   <option value="image_generation">Image Generation</option>
                   <option value="video_generation">Video Generation</option>
                 </select>
@@ -195,8 +198,8 @@ const Home = () => {
                 disabled={!inputValue.trim() || isLoading}
               >
                 {isLoading 
-                  ? (context === 'rephrase' ? 'Correcting...' : 'Optimizing...') 
-                  : (context === 'rephrase' ? 'Correct Text' : 'Optimize Prompt')
+                  ? (context === 'rephrase' ? 'Correcting...' : context === 'cursor_code_optimizer' ? 'Optimizing Code...' : 'Optimizing...') 
+                  : (context === 'rephrase' ? 'Correct Text' : context === 'cursor_code_optimizer' ? 'Optimize for Cursor' : 'Optimize Prompt')
                 }
               </button>
             </form>
@@ -206,7 +209,7 @@ const Home = () => {
         {/* Right Panel - Output */}
         <div className="right-panel">
           <div className="output-header">
-            <h2>{context === 'rephrase' ? 'Corrected Text' : 'Optimized Prompt'}</h2>
+            <h2>{context === 'rephrase' ? 'Corrected Text' : context === 'cursor_code_optimizer' ? 'Cursor-Optimized Code Prompt' : 'Optimized Prompt'}</h2>
           </div>
           
           {isLoading ? (
@@ -220,7 +223,7 @@ const Home = () => {
               <div 
                 className="copy-button" 
                 onClick={() => copyToClipboard(latestMessage.optimized, 'top')}
-                title={context === 'rephrase' ? 'Copy corrected text' : 'Copy optimized prompt'}
+                title={context === 'rephrase' ? 'Copy corrected text' : context === 'cursor_code_optimizer' ? 'Copy Cursor-optimized code prompt' : 'Copy optimized prompt'}
               >
                 📋
               </div>
@@ -229,7 +232,7 @@ const Home = () => {
                 <div className="prompt-section-display">
                   <div className="section-header">
                     <div className="section-icon">📝</div>
-                    <h3>{context === 'rephrase' ? 'Original Text' : 'Original Prompt'}</h3>
+                    <h3>{context === 'rephrase' ? 'Original Text' : context === 'cursor_code_optimizer' ? 'Original Code Request' : 'Original Prompt'}</h3>
                   </div>
                   <div className="section-content">
                     <p>{latestMessage.original}</p>
@@ -239,7 +242,7 @@ const Home = () => {
                 <div className="prompt-section-display">
                   <div className="section-header">
                     <div className="section-icon">🎯</div>
-                    <h3>{context === 'rephrase' ? 'Correction Strategy' : 'Strategy Applied'}</h3>
+                    <h3>{context === 'rephrase' ? 'Correction Strategy' : context === 'cursor_code_optimizer' ? 'Cursor Optimization Strategy' : 'Strategy Applied'}</h3>
                   </div>
                   <div className="section-content">
                     <p>{latestMessage.strategy}</p>
@@ -249,7 +252,7 @@ const Home = () => {
                 <div className="prompt-section-display">
                   <div className="section-header">
                     <div className="section-icon">✨</div>
-                    <h3>{context === 'rephrase' ? 'Corrected Text' : 'Optimized Prompt'}</h3>
+                    <h3>{context === 'rephrase' ? 'Corrected Text' : context === 'cursor_code_optimizer' ? 'Cursor-Optimized Prompt' : 'Optimized Prompt'}</h3>
                   </div>
                   <div className="section-content">
                     <p>{latestMessage.optimized}</p>
@@ -263,7 +266,7 @@ const Home = () => {
                   onClick={() => copyToClipboard(latestMessage.optimized, 'main')}
                 >
                   <span className="btn-icon">📋</span>
-                  {context === 'rephrase' ? 'Copy Corrected Text' : 'Copy Optimized'}
+                  {context === 'rephrase' ? 'Copy Corrected Text' : context === 'cursor_code_optimizer' ? 'Copy Cursor Prompt' : 'Copy Optimized'}
                 </button>
                 <button className="save-btn">
                   <span className="btn-icon">⭐</span>
@@ -287,11 +290,13 @@ const Home = () => {
             <div className="empty-state">
               <div className="empty-icon">✨</div>
               <h3>
-                {context === 'rephrase' ? 'No text corrected yet' : 'No prompt optimized yet'}
+                {context === 'rephrase' ? 'No text corrected yet' : context === 'cursor_code_optimizer' ? 'No code prompt optimized yet' : 'No prompt optimized yet'}
               </h3>
               <p>
                 {context === 'rephrase' 
                   ? 'Enter text on the left to see the corrections here.' 
+                  : context === 'cursor_code_optimizer'
+                  ? 'Enter your code request on the left to see the Cursor-optimized prompt here.'
                   : 'Enter a prompt on the left to see the optimization here. Learn more on our About page or view plans on Pricing.'
                 }
               </p>

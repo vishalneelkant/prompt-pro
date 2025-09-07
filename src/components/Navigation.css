@@ -10,7 +10,7 @@
 .nav-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 32px; /* Match content padding */
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -98,7 +98,7 @@
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
   .nav-container {
-    padding: 0 16px;
+    padding: 0 20px; /* Consistent with mobile content padding */
     height: 56px;
   }
   
