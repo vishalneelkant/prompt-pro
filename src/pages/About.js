@@ -24,6 +24,24 @@ const About = () => {
         </div>
 
         <div className="about-content">
+          <div className="mvp-highlight">
+            <div className="mvp-badge">🚀 USP FEATURE</div>
+            <div className="mvp-card">
+              <div className="mvp-icon">⚡</div>
+              <h2>Cursor Code Optimizer</h2>
+              <p className="mvp-description">
+                Our flagship feature transforms your coding ideas into comprehensive, structured development 
+                prompts optimized specifically for Cursor AI. Get intelligent strategy selection, step-by-step 
+                implementation plans, and AI-assisted development guidance.
+              </p>
+              <div className="mvp-features">
+                <span className="mvp-tag">✨ AI-Powered Strategy Selection</span>
+                <span className="mvp-tag">🔧 Cursor-Optimized Prompts</span>
+                <span className="mvp-tag">📋 Implementation Roadmaps</span>
+              </div>
+            </div>
+          </div>
+
           <div className="feature-grid">
             <div className="feature-card">
               <div className="feature-icon">🎯</div>

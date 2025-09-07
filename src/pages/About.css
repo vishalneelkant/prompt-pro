@@ -7,7 +7,7 @@
 .about-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 60px 24px;
+  padding: 60px 32px; /* Match navigation padding */
 }
 
 .about-hero {
@@ -43,11 +43,105 @@
   gap: 80px;
 }
 
+/* MVP Highlight Section */
+.mvp-highlight {
+  position: relative;
+  margin-bottom: 40px;
+}
+
+.mvp-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.mvp-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 20px;
+  padding: 40px;
+  position: relative;
+  box-shadow: 0 20px 40px rgba(59, 130, 246, 0.1);
+  overflow: hidden;
+}
+
+.mvp-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6, #06b6d4);
+  border-radius: 20px;
+  padding: 2px;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: subtract;
+  -webkit-mask-composite: xor;
+  z-index: -1;
+}
+
+.mvp-icon {
+  font-size: 3rem;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.mvp-card h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, #111827, #374151);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.mvp-description {
+  font-size: 1.125rem;
+  color: #6b7280;
+  line-height: 1.7;
+  margin-bottom: 24px;
+}
+
+.mvp-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.mvp-tag {
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  color: #1d4ed8;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 1px solid #bfdbfe;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* Feature Grid */
 .feature-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: 32px;
+  /* Ensure first card aligns with navigation logo */
+  margin-left: 0;
 }
 
 .feature-card {
@@ -177,7 +271,7 @@
 /* Mobile Responsiveness */
 @media (max-width: 1024px) {
   .about-container {
-    padding: 40px 20px;
+    padding: 40px 20px; /* Consistent mobile padding */
   }
   
   .about-content {
@@ -217,6 +311,22 @@
   
   .feature-card {
     padding: 24px;
+  }
+  
+  .mvp-card {
+    padding: 32px 24px;
+  }
+  
+  .mvp-card h2 {
+    font-size: 1.75rem;
+  }
+  
+  .mvp-description {
+    font-size: 1rem;
+  }
+  
+  .mvp-features {
+    justify-content: center;
   }
   
   .about-mission {

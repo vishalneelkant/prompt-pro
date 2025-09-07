@@ -7,7 +7,7 @@
 .pricing-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 40px 24px;
+  padding: 40px 32px; /* Match navigation padding */
 }
 
 .pricing-hero {
@@ -436,7 +436,7 @@
 /* Mobile Responsiveness */
 @media (max-width: 1024px) {
   .pricing-container {
-    padding: 40px 20px;
+    padding: 40px 20px; /* Consistent mobile padding */
   }
   
   .pricing-grid {
