@@ -65,7 +65,7 @@ context_strategies = {
     "general": "General prompting: Use clear, direct language with specific instructions and expected outcomes.",
     "cursor_code_optimizer": "Cursor Code Optimizer: Transform coding ideas into structured development prompts optimized for Cursor AI with clear product specs, simple tech stacks, multiple solution options with pros/cons, step-by-step implementation plans, and comprehensive testing strategies.",
       # 🚀 Vibe coding strategies
-    "feature": "General feature prompting: Start with vibe PMing by restating the feature as a product spec, keep the tech stack simple, offer multiple solution options with pros/cons, recommend the simplest, break down the implementation into small iterative steps, suggest a test plan, and provide commit/diff outputs only when requested.",
+    "feature": "General feature prompting: Start with vibe PMing by restating the feature as a product spec, offer multiple solution options with pros/cons, recommend the simplest, break down the implementation into small iterative steps, suggest a test plan, and provide commit/diff outputs only when requested.",
     "refactor": "Refactor code prompting: Begin with a short spec of the intended improvement, preserve the existing API and tests, restrict scope to the specified files, propose 2–3 refactor strategies, outline an iterative plan, add or reuse tests, and deliver results as commit/diff format with a clear revert option.",
     "debug": "Debug/Fix prompting: Restate the problem and symptoms, analyze root cause, propose minimal fixes, suggest adding failing and regression tests, outline stepwise plan, limit changes to specific files, return results as commit/diff only if requested, and finish with a plain-language explanation."
 
@@ -78,7 +78,7 @@ context_instructions = {
     "image_generation": "Create world-class image generation prompts using structured prompting: Subject + Details + Style + Technical Specifications + Negative Prompts. Focus on clarity, control, creativity, and quality. Generate prompts that produce stunning, professional-grade images with maximum detail, artistic direction, and technical precision.",
     "video_generation": "Create world-class video generation prompts using structured prompting: Subject + Motion + Style + Technical Specifications + Negative Prompts. Focus on cinematic quality, smooth transitions, dynamic camera movements, and engaging visual storytelling. Generate prompts that produce professional-grade videos with maximum visual impact and narrative flow.",
     "general": "Use clear, direct language with specific instructions and expected outcomes, include step-by-step guidance and comprehensive information.",
-    "cursor_code_optimizer" : "Cursor Code Optimizer: Transform coding ideas into structured development prompts optimized for Cursor AI with clear product specs, simple tech stacks, multiple solution options with pros/cons, step-by-step implementation plans, and comprehensive testing strategies."
+    "cursor_code_optimizer": "Enhanced Cursor Code Optimizer: Transform coding ideas into comprehensive, structured development prompts optimized for Cursor AI. Provides deep user intent analysis, detailed product specifications, intelligent technology recommendations, multiple solution approaches with pros/cons, granular step-by-step implementation roadmaps, comprehensive testing strategies, Cursor AI interaction optimization, development best practices, risk mitigation, and post-implementation considerations. Designed to create actionable prompts that enable successful AI-assisted development regardless of user experience level."
 
 }
 
@@ -165,15 +165,96 @@ def clean_prompt(prompt: str) -> str:
     
     return cleaned.strip()
 
+def analyze_user_intent(cleaned_prompt: str) -> dict:
+    """Analyze user intent for better understanding of coding requirements"""
+    prompt_lower = cleaned_prompt.lower()
+    
+    # Intent categories
+    intent_analysis = {
+        "primary_goal": "unknown",
+        "complexity_level": "medium",
+        "domain": "general",
+        "urgency": "normal",
+        "user_experience_level": "intermediate",
+        "specific_technologies": [],
+        "constraints": []
+    }
+    
+    # Analyze primary goal
+    if any(word in prompt_lower for word in ["bug", "error", "fix", "broken", "not working", "debug", "issue", "problem"]):
+        intent_analysis["primary_goal"] = "debug_fix"
+    elif any(word in prompt_lower for word in ["refactor", "improve", "optimize", "clean up", "restructure", "reorganize", "performance"]):
+        intent_analysis["primary_goal"] = "refactor_optimize"
+    elif any(word in prompt_lower for word in ["new", "create", "build", "develop", "implement", "add", "feature"]):
+        intent_analysis["primary_goal"] = "new_feature"
+    elif any(word in prompt_lower for word in ["test", "testing", "unit test", "integration test", "automation"]):
+        intent_analysis["primary_goal"] = "testing"
+    elif any(word in prompt_lower for word in ["deploy", "deployment", "ci/cd", "pipeline", "production"]):
+        intent_analysis["primary_goal"] = "deployment"
+    elif any(word in prompt_lower for word in ["api", "endpoint", "rest", "graphql", "backend"]):
+        intent_analysis["primary_goal"] = "api_development"
+    elif any(word in prompt_lower for word in ["ui", "frontend", "react", "vue", "angular", "interface"]):
+        intent_analysis["primary_goal"] = "frontend_development"
+    elif any(word in prompt_lower for word in ["database", "db", "sql", "nosql", "migration", "schema"]):
+        intent_analysis["primary_goal"] = "database_work"
+    
+    # Analyze complexity level
+    if any(word in prompt_lower for word in ["simple", "basic", "quick", "easy", "minimal"]):
+        intent_analysis["complexity_level"] = "low"
+    elif any(word in prompt_lower for word in ["complex", "advanced", "comprehensive", "enterprise", "scalable", "production-ready"]):
+        intent_analysis["complexity_level"] = "high"
+    
+    # Analyze domain
+    if any(word in prompt_lower for word in ["ecommerce", "shop", "cart", "payment", "order"]):
+        intent_analysis["domain"] = "ecommerce"
+    elif any(word in prompt_lower for word in ["auth", "login", "user", "account", "profile"]):
+        intent_analysis["domain"] = "authentication"
+    elif any(word in prompt_lower for word in ["data", "analytics", "dashboard", "chart", "report"]):
+        intent_analysis["domain"] = "data_analytics"
+    elif any(word in prompt_lower for word in ["chat", "message", "real-time", "websocket", "notification"]):
+        intent_analysis["domain"] = "communication"
+    elif any(word in prompt_lower for word in ["ml", "ai", "machine learning", "model", "prediction"]):
+        intent_analysis["domain"] = "ai_ml"
+    
+    # Analyze urgency
+    if any(word in prompt_lower for word in ["urgent", "asap", "quickly", "fast", "immediately"]):
+        intent_analysis["urgency"] = "high"
+    elif any(word in prompt_lower for word in ["when possible", "eventually", "future", "later"]):
+        intent_analysis["urgency"] = "low"
+    
+    # Analyze user experience level
+    if any(word in prompt_lower for word in ["beginner", "new to", "learning", "tutorial", "help me understand"]):
+        intent_analysis["user_experience_level"] = "beginner"
+    elif any(word in prompt_lower for word in ["expert", "advanced", "professional", "enterprise", "production"]):
+        intent_analysis["user_experience_level"] = "expert"
+    
+    # Extract specific technologies
+    tech_keywords = ["react", "vue", "angular", "node", "python", "java", "typescript", "javascript", 
+                    "django", "flask", "express", "mongodb", "postgresql", "mysql", "redis", 
+                    "docker", "kubernetes", "aws", "azure", "gcp", "firebase"]
+    for tech in tech_keywords:
+        if tech in prompt_lower:
+            intent_analysis["specific_technologies"].append(tech)
+    
+    # Extract constraints
+    if "budget" in prompt_lower or "cost" in prompt_lower:
+        intent_analysis["constraints"].append("budget_conscious")
+    if "time" in prompt_lower and ("limit" in prompt_lower or "deadline" in prompt_lower):
+        intent_analysis["constraints"].append("time_constrained")
+    if "existing" in prompt_lower and ("code" in prompt_lower or "system" in prompt_lower):
+        intent_analysis["constraints"].append("legacy_integration")
+    
+    return intent_analysis
+
 def get_strategy_for_context(context: str, cleaned_prompt: str):
     """Get the best strategy based on context and prompt content"""
     if context == "cursor_code_optimizer":
-        # Intelligent strategy selection for cursor code optimization based on prompt content
-        prompt_lower = cleaned_prompt.lower()
+        # Enhanced intelligent strategy selection with intent analysis
+        intent = analyze_user_intent(cleaned_prompt)
         
-        if any(word in prompt_lower for word in ["bug", "error", "fix", "broken", "not working", "debug", "issue"]):
+        if intent["primary_goal"] == "debug_fix":
             return context_strategies["debug"]
-        elif any(word in prompt_lower for word in ["refactor", "improve", "optimize", "clean up", "restructure", "reorganize"]):
+        elif intent["primary_goal"] == "refactor_optimize":
             return context_strategies["refactor"]
         else:
             return context_strategies["feature"]
@@ -233,25 +314,106 @@ Original User Text: {cleaned_prompt}
 Return ONLY the corrected and optimized text with proper grammar, spelling, and clarity."""
 
     elif context == "cursor_code_optimizer":
+        # Analyze user intent for enhanced optimization
+        intent = analyze_user_intent(cleaned_prompt)
+        
         return f"""You are a Senior Software Developer and Prompt Engineering Expert specializing in Cursor AI optimization.
 
-Your task is to transform the user's coding idea into a comprehensive, structured development prompt optimized specifically for Cursor AI that follows best practices for AI-assisted development.
+Your mission is to transform the user's coding idea into a comprehensive, structured development prompt optimized specifically for Cursor AI that follows best practices for AI-assisted development.
 
 STRATEGY APPLIED: {strategy}
 
-CURSOR CODE OPTIMIZATION FRAMEWORK:
-1. **Product Specification**: Restate the feature as a clear product spec with user stories and acceptance criteria
-2. **Technology Stack**: Recommend simple, proven technologies and explain the rationale
-3. **Solution Options**: Provide 2-3 implementation approaches with pros/cons analysis
-4. **Recommended Approach**: Select and justify the simplest, most maintainable solution
-5. **Implementation Plan**: Break down into small, iterative steps with clear milestones
-6. **Testing Strategy**: Outline comprehensive test plan including unit, integration, and user acceptance tests
-7. **Development Guidelines**: Include code quality standards and best practices
-8. **Risk Mitigation**: Identify potential issues and provide mitigation strategies
+USER INTENT ANALYSIS:
+- Primary Goal: {intent['primary_goal']}
+- Complexity Level: {intent['complexity_level']}
+- Domain: {intent['domain']}
+- User Experience Level: {intent['user_experience_level']}
+- Technologies Mentioned: {', '.join(intent['specific_technologies']) if intent['specific_technologies'] else 'None specified'}
+- Constraints: {', '.join(intent['constraints']) if intent['constraints'] else 'None identified'}
+
+ENHANCED CURSOR CODE OPTIMIZATION FRAMEWORK:
+
+## 1. INTENT UNDERSTANDING & REQUIREMENTS ANALYSIS
+- Analyze the user's core desire and emotional goal behind the request
+- Identify explicit and implicit requirements
+- Clarify the intended use case and target audience
+- Define success criteria and acceptance criteria
+
+## 2. DETAILED PRODUCT SPECIFICATION
+- Restate the feature as a clear, comprehensive product spec
+- Create user stories with acceptance criteria
+- Define functional and non-functional requirements
+- Specify user experience expectations
+- Identify integration points and dependencies
+
+## 3. INTELLIGENT TECHNOLOGY STACK RECOMMENDATION
+- Recommend technologies based on: complexity level, user experience, project constraints
+- Justify each technology choice with specific benefits for Cursor AI development
+- Consider learning curve, community support, and AI assistance quality
+- Provide alternative options for different scenarios
+
+## 4. COMPREHENSIVE SOLUTION ANALYSIS
+- Present 3 distinct implementation approaches:
+  a) **Quick & Simple**: Minimal viable solution for rapid prototyping
+  b) **Balanced & Scalable**: Production-ready with good maintainability
+  c) **Enterprise & Advanced**: Full-featured with maximum flexibility
+- Include detailed pros/cons analysis for each approach
+- Consider development time, maintenance cost, scalability, and Cursor AI compatibility
+
+## 5. RECOMMENDED APPROACH WITH JUSTIFICATION
+- Select the optimal approach based on intent analysis
+- Provide detailed justification considering user experience level and constraints
+- Explain why this approach works best with Cursor AI assistance
+- Include fallback options if the primary approach faces issues
+
+## 6. DETAILED IMPLEMENTATION ROADMAP
+- Break down into 8-12 granular, iterative steps
+- Each step should be completable in 1-2 hours with Cursor AI
+- Include specific Cursor AI prompts for each step
+- Define clear completion criteria and validation points
+- Specify file structure and code organization
+- Include error handling and edge case considerations
+
+## 7. COMPREHENSIVE TESTING STRATEGY
+- Unit testing approach with specific test cases
+- Integration testing scenarios
+- User acceptance testing criteria
+- Performance testing considerations (if applicable)
+- Security testing requirements (if applicable)
+- Cursor AI-assisted test generation strategies
+
+## 8. CURSOR AI INTERACTION OPTIMIZATION
+- Specific prompting strategies for each development phase
+- Code generation best practices for Cursor AI
+- Debugging and troubleshooting approaches with AI assistance
+- Code review and optimization techniques using Cursor AI
+- Documentation generation strategies
+
+## 9. DEVELOPMENT BEST PRACTICES & GUIDELINES
+- Code quality standards and conventions
+- Version control workflow optimized for AI-assisted development
+- Error handling patterns and logging strategies
+- Performance optimization guidelines
+- Security best practices
+- Accessibility considerations (if applicable)
+
+## 10. RISK MITIGATION & CONTINGENCY PLANNING
+- Identify potential technical risks and blockers
+- Provide specific mitigation strategies for each risk
+- Include troubleshooting guides for common issues
+- Define rollback procedures if needed
+- Suggest monitoring and alerting strategies
+
+## 11. POST-IMPLEMENTATION CONSIDERATIONS
+- Deployment strategy and environment setup
+- Monitoring and maintenance procedures
+- Future enhancement opportunities
+- Documentation and knowledge transfer
+- Performance metrics and success measurement
 
 ORIGINAL CODE REQUEST: {cleaned_prompt}
 
-Create a comprehensive, actionable development prompt optimized for Cursor AI that a developer can use to implement this feature successfully with AI assistance. Focus on clarity, practicality, maintainability, and optimal Cursor AI interaction patterns."""
+Create a comprehensive, actionable development prompt optimized for Cursor AI that transforms this request into a structured, step-by-step implementation guide. The output should be so detailed and well-structured that any developer can follow it successfully with Cursor AI assistance, regardless of their experience level. Focus on clarity, practicality, maintainability, and optimal Cursor AI interaction patterns."""
 
     else:
         return f"""You are a Prompt Optimizer AI specializing in {context} content.
@@ -271,6 +433,11 @@ def apply_strategy(user_prompt: str, context: str = "general"):
     """Apply optimization strategy based on context and prompt"""
     cleaned_prompt = clean_prompt(user_prompt)
     strategy = get_strategy_for_context(context, cleaned_prompt)
+    
+    # For cursor_code_optimizer, include intent analysis in response
+    intent_analysis = None
+    if context == "cursor_code_optimizer":
+        intent_analysis = analyze_user_intent(cleaned_prompt)
     
     template = create_template(context, strategy, cleaned_prompt)
     
@@ -296,7 +463,11 @@ def apply_strategy(user_prompt: str, context: str = "general"):
                         cleaned_response = cleaned_response[1:].strip()
                     return {"original": user_prompt, "strategy": strategy, "optimized": cleaned_response}
                 
-                return {"original": user_prompt, "strategy": strategy, "optimized": response}
+                # Include intent analysis for cursor_code_optimizer
+                result = {"original": user_prompt, "strategy": strategy, "optimized": response}
+                if intent_analysis:
+                    result["intent_analysis"] = intent_analysis
+                return result
         except Exception as e:
             logger.error(f"LLM call failed: {e}")
 
@@ -306,24 +477,67 @@ def apply_strategy(user_prompt: str, context: str = "general"):
     elif context == "video_generation":
         fallback_prompt = f"Generate a video of {cleaned_prompt} with smooth motion, clear scene transitions, dynamic camera movements, and engaging visual storytelling elements."
     elif context == "cursor_code_optimizer":
-        fallback_prompt = f"""**Cursor-Optimized Code Request**: {cleaned_prompt}
+        # Analyze intent for enhanced fallback
+        intent = analyze_user_intent(cleaned_prompt)
+        
+        fallback_prompt = f"""# Cursor AI-Optimized Development Request
 
-**Implementation Plan for Cursor AI**:
-1. Set up development environment with Cursor AI integration
-2. Create basic project structure with clear file organization
-3. Implement core functionality using AI-assisted development
-4. Add error handling and validation with AI suggestions
-5. Write comprehensive tests with AI-generated test cases
-6. Document the implementation with AI-enhanced documentation
+## Original Request
+{cleaned_prompt}
 
-**Technology Stack**: Use modern, well-supported technologies optimized for AI assistance
-**Cursor AI Strategy**: Leverage AI for code generation, debugging, and optimization
-**Testing Strategy**: Include unit tests, integration tests, and user acceptance testing with AI assistance
-**Best Practices**: Follow coding standards, use version control, and implement proper error handling with Cursor AI guidance"""
+## Intent Analysis
+- **Primary Goal**: {intent['primary_goal']}
+- **Complexity**: {intent['complexity_level']}
+- **Domain**: {intent['domain']}
+- **Technologies**: {', '.join(intent['specific_technologies']) if intent['specific_technologies'] else 'To be determined'}
+
+## Structured Implementation Plan for Cursor AI
+
+### Phase 1: Planning & Setup (30 minutes)
+1. **Environment Setup**: Configure development environment with Cursor AI integration
+2. **Project Structure**: Create organized file/folder structure optimized for AI assistance
+3. **Requirements Analysis**: Define clear functional and technical requirements
+4. **Technology Selection**: Choose appropriate tech stack based on complexity and domain
+
+### Phase 2: Core Development (2-4 hours)
+5. **Architecture Design**: Plan system architecture with clear separation of concerns
+6. **Core Implementation**: Build main functionality using Cursor AI code generation
+7. **Error Handling**: Implement robust error handling and validation
+8. **Integration**: Connect components and ensure smooth data flow
+
+### Phase 3: Quality Assurance (1-2 hours)
+9. **Testing Strategy**: Create comprehensive test suite with Cursor AI assistance
+10. **Code Review**: Use AI for code optimization and best practice compliance
+11. **Documentation**: Generate clear documentation with AI enhancement
+12. **Performance Check**: Validate performance and optimize if needed
+
+### Phase 4: Deployment Preparation (30 minutes)
+13. **Deployment Setup**: Configure deployment pipeline and environment
+14. **Monitoring**: Set up basic monitoring and logging
+15. **Final Validation**: Perform end-to-end testing and validation
+
+## Cursor AI Optimization Guidelines
+- **Use Specific Prompts**: Be explicit about requirements and expected outputs
+- **Iterative Development**: Build in small, testable increments
+- **Context Awareness**: Provide sufficient context for AI to understand the broader system
+- **Code Quality**: Leverage AI for code review and optimization suggestions
+- **Documentation**: Use AI to generate comprehensive documentation
+
+## Success Criteria
+- Code is clean, maintainable, and follows best practices
+- All functionality works as expected with proper error handling
+- Comprehensive tests cover main use cases
+- Documentation is clear and complete
+- System is ready for deployment with proper monitoring
+
+**Next Steps**: Start with Phase 1 and use Cursor AI to assist with each step, providing clear context and specific requirements for optimal AI assistance."""
     else:
         fallback_prompt = f"Please provide a detailed, {context}-focused response about: {cleaned_prompt}"
 
-    return {"original": user_prompt, "strategy": strategy, "optimized": fallback_prompt}
+    result = {"original": user_prompt, "strategy": strategy, "optimized": fallback_prompt}
+    if context == "cursor_code_optimizer" and intent_analysis:
+        result["intent_analysis"] = intent_analysis
+    return result
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
