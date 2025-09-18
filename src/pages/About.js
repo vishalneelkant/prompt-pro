@@ -7,9 +7,9 @@ const About = () => {
   return (
     <>
       <SEO 
-        title="About PromptVita - AI-Powered Prompt Optimization Platform"
-        description="Learn about PromptVita's mission to democratize prompt engineering. Discover how our AI-powered platform helps users create better prompts and improve AI interactions."
-        keywords="about promptvita, prompt engineering platform, AI optimization tool, prompt improvement, AI writing assistant, prompt enhancement service"
+        title="About PromptVita - AI Prompt Engineer Platform"
+        description="Learn about PromptVita's AI Prompt Engineer mission to democratize prompt engineering. Discover how our AI-powered platform helps users create better prompts and improve AI interactions."
+        keywords="about AI prompt engineer, prompt engineering platform, AI optimization tool, prompt improvement, AI writing assistant, prompt enhancement service"
         canonical="https://www.promptvita.com/about"
       />
       <StructuredData data={aboutPageSchema} />
@@ -102,7 +102,7 @@ const About = () => {
             <h2>Our Mission</h2>
             <p>
               At PromptVita, we believe that effective communication with AI starts with well-crafted prompts. 
-              Our mission is to democratize prompt engineering by making it accessible to everyone, regardless 
+              Our AI Prompt Engineer platform democratizes prompt engineering by making it accessible to everyone, regardless 
               of their technical background. We're committed to helping users unlock the full potential of AI 
               through better prompts.
             </p>
@@ -129,7 +129,7 @@ const About = () => {
 
           <div className="about-cta">
             <h2>Ready to Optimize Your Prompts?</h2>
-            <p>Join thousands of users who have already improved their AI interactions with PromptVita.</p>
+            <p>Join thousands of users who have already improved their AI interactions with PromptVita's AI Prompt Engineer.</p>
             <a href="/" className="cta-button">Start Optimizing</a>
           </div>
         </div>

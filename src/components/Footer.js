@@ -9,7 +9,7 @@ const Footer = () => {
           <div className="brand-icon">⚡</div>
           <div>
             <div className="brand-name">PromptVita</div>
-            <div className="brand-tag">Turn messy prompts into powerful AI instructions.</div>
+            <div className="brand-tag">AI Prompt Engineer - Transform ideas into powerful AI instructions.</div>
           </div>
         </div>
         <div className="footer-links">

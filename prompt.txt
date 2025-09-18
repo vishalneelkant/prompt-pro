@@ -1,26 +1,76 @@
-## Act as Expert Software developer
-
-## Complete the user story, use proper coding standard, Make sure everything is working
-
-## User Story 
-Application is hosted on www.promptvita.com which is not getting indexed on google due to below issue
-
-info
-Page indexing
-Page is not indexed: Crawled - currently not indexed
-Discovery
-Sitemaps
-No referring sitemaps detected
-Referring page
-None detected
-URL might be known from other sources that are currently not reported
 
 
-You need to address the mentioned issue, so that application is searcheable on google.com 
+## 1. INTENT UNDERSTANDING & REQUIREMENTS ANALYSIS
+- **Core Desire**: The user wants to revamp an existing product, previously known as "Prompt Optimizer," into an "AI Prompt Engineer."
+- **Emotional Goal**: The user aims to enhance the product's perception and functionality by emphasizing its AI capabilities.
+- **Explicit Requirements**: Change the UI text to reflect the new branding and enhance the UI to support these changes.
+- **Implicit Requirements**: Ensure the product's functionality aligns with the new branding as an AI-powered tool.
+- **Use Case**: The product is intended for users who need assistance in optimizing and engineering prompts for AI systems.
+- **Target Audience**: Intermediate-level users familiar with AI and prompt engineering.
+- **Success Criteria**: The UI reflects the new branding, and the product functions as an AI-powered prompt engineering tool.
+
+## 2. DETAILED PRODUCT SPECIFICATION
+- **Feature Spec**: Transform "Prompt Optimizer" into "AI Prompt Engineer" with updated UI text and enhanced interface.
+- **User Stories**:
+  - As a user, I want to see the product branded as an "AI Prompt Engineer" so that I understand its capabilities.
+  - As a user, I want an intuitive UI that supports prompt engineering tasks efficiently.
+- **Functional Requirements**: Update UI text, enhance UI design, maintain existing API and tests.
+- **Non-Functional Requirements**: Ensure UI is responsive and accessible.
+- **Integration Points**: Existing APIs and backend services.
+- **Dependencies**: UI frameworks, AI libraries.
+
+## 4. COMPREHENSIVE SOLUTION ANALYSIS
+- **Quick & Simple**: Update UI text and minor design tweaks.
+  - **Pros**: Fast implementation, minimal changes.
+  - **Cons**: Limited enhancement to user experience.
+- **Balanced & Scalable**: Comprehensive UI redesign with updated branding and improved user flow.
+  - **Pros**: Improved user experience, scalable design.
+  - **Cons**: Moderate development time.
+- **Enterprise & Advanced**: Full UI/UX overhaul with advanced AI features and customization options.
+  - **Pros**: Maximum flexibility and user engagement.
+  - **Cons**: High development cost and time.
+
+## 5. RECOMMENDED APPROACH WITH JUSTIFICATION
+- **Approach**: Balanced & Scalable
+- **Justification**: This approach offers a good balance between user experience enhancement and development effort, aligning with the user's intermediate experience level and the product's AI focus.
+
+## 6. DETAILED IMPLEMENTATION ROADMAP
+1. **UI Text Update**: Change all instances of "Prompt Optimizer" to "AI Prompt Engineer" in the codebase.
+   - **Cursor AI Prompt**: "Find and replace 'Prompt Optimizer' with 'AI Prompt Engineer' in all UI components."
+   - **Completion Criteria**: All UI text reflects the new branding.
+2. **UI Design Enhancement**: Redesign key UI components to align with the new branding.
+   - **Cursor AI Prompt**: "Suggest UI design improvements for an AI-powered tool."
+   - **Completion Criteria**: UI design is updated and consistent.
+3. **Responsive Design**: Ensure the UI is responsive across devices.
+   - **Cursor AI Prompt**: "Optimize UI components for responsiveness."
+   - **Completion Criteria**: UI is responsive on mobile and desktop.
+4. **Accessibility Improvements**: Enhance UI accessibility features.
+   - **Cursor AI Prompt**: "Implement accessibility best practices in the UI."
+   - **Completion Criteria**: UI meets accessibility standards.
+5. **Integration Testing**: Test UI changes with existing APIs.
+   - **Cursor AI Prompt**: "Run integration tests to ensure UI changes work with existing APIs."
+   - **Completion Criteria**: All tests pass successfully.
+6. **User Acceptance Testing**: Conduct UAT with target users.
+   - **Cursor AI Prompt**: "Facilitate user acceptance testing for the new UI."
+   - **Completion Criteria**: Positive feedback from users.
+7. **Performance Optimization**: Optimize UI performance.
+   - **Cursor AI Prompt**: "Identify and fix performance bottlenecks in the UI."
+   - **Completion Criteria**: UI performance is optimized.
+8. **Documentation Update**: Update user documentation to reflect changes.
+   - **Cursor AI Prompt**: "Revise user documentation for the AI Prompt Engineer."
+   - **Completion Criteria**: Documentation is up-to-date.
 
 
+## 8. CURSOR AI INTERACTION OPTIMIZATION
+- **Prompting Strategies**: Use specific prompts for each development phase to guide AI assistance.
+- **Code Generation Best Practices**: Leverage AI for code suggestions and optimizations.
+- **Debugging**: Use AI to identify and resolve issues quickly.
+- **Code Review**: Employ AI for code quality checks and improvements.
+- **Documentation**: Generate documentation using AI for consistency and clarity.
 
-
-Understand the requirements, Before coding first analyze the problem statement, Once analysis is done then 
-Create a plan to implement the requirements then code according to the detail design. 
-
+## 9. DEVELOPMENT BEST PRACTICES & GUIDELINES
+- **Code Quality**: Adhere to coding standards and conventions.
+- **Version Control**: Use Git for version control with clear commit messages.
+- **Error Handling**: Implement robust error handling and logging.
+- **Performance Optimization**: Follow best practices for UI performance.
+- **Security**: Ensure secure handling of user data.

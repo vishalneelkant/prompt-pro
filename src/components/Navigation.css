@@ -1,5 +1,5 @@
 .navigation {
-  background-color: #ffffff;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   border-bottom: 1px solid #e5e7eb;
   position: sticky;
   top: 0;
@@ -34,6 +34,23 @@
 .nav-logo-icon {
   font-size: 24px;
   color: #3b82f6;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+/* Performance optimization: Use will-change for animated elements */
+.nav-logo-icon {
+  will-change: transform, opacity;
 }
 
 .nav-logo-text {
@@ -128,6 +145,14 @@
   .nav-item {
     font-size: 13px;
     padding: 6px 10px;
+  }
+  
+  .nav-logo-text {
+    font-size: 18px;
+  }
+  
+  .nav-logo-icon {
+    font-size: 20px;
   }
   
   .nav-login-btn {

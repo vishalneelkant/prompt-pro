@@ -123,9 +123,9 @@ const Home = () => {
   return (
     <>
       <SEO 
-        title="AI Prompt Optimizer & Grammar Checker"
-        description="Transform messy prompts into powerful AI instructions. Free AI-powered prompt optimization, grammar correction, and professional text enhancement. Multiple contexts available."
-        keywords="prompt optimizer, AI prompts, ChatGPT prompts, prompt engineering, grammar checker, text correction, AI writing assistant, prompt enhancer"
+        title="PromptVita - AI Prompt Engineer & Cursor Prompt Optimizer"
+        description="Transform messy prompts into powerful AI instructions. Free AI-powered prompt engineering, grammar correction, and professional text enhancement. Multiple contexts available."
+        keywords="AI prompt engineer, AI prompts, ChatGPT prompts, prompt engineering, grammar checker, text correction, AI writing assistant, prompt enhancer, Cursor prompt optimizer"
         canonical="https://www.promptvita.com/"
       />
       <StructuredData data={homePageSchema} />
@@ -148,8 +148,8 @@ const Home = () => {
               {context === 'rephrase' 
                 ? 'PromptVita – Turn messy text into polished, professional writing.' 
                 : context === 'cursor_code_optimizer'
-                ? 'PromptVita – Optimize your code with AI-powered Cursor prompts.'
-                : 'PromptVita – Turn messy prompts into powerful AI instructions.'
+                ? 'PromptVita – AI Prompt Engineer for Cursor code optimization.'
+                : 'PromptVita – AI Prompt Engineer for powerful AI instructions.'
               }
             </h1>
             
@@ -169,10 +169,13 @@ const Home = () => {
                   }
                   disabled={isLoading}
                   rows={4}
+                  aria-label="Enter your prompt or text to optimize"
+                  aria-describedby="input-help-text"
+                  role="textbox"
                 />
                 <div className="counter-row">
-                  <span>Tip: Be specific about role, task, constraints, and examples.</span>
-                  <span>{charCount} chars</span>
+                  <span id="input-help-text">Tip: Be specific about role, task, constraints, and examples.</span>
+                  <span aria-live="polite">{charCount} chars</span>
                 </div>
               </div>
               
@@ -181,9 +184,11 @@ const Home = () => {
                   className="context-dropdown"
                   value={context}
                   onChange={(e) => setContext(e.target.value)}
+                  aria-label="Select optimization context"
+                  aria-describedby="context-help-text"
                 >
                   <option value="general">Select context</option>
-                  <option value="cursor_code_optimizer">🚀 Cursor Code Optimizer</option>
+                  <option value="cursor_code_optimizer">Cursor Code Optimizer</option>
                   <option value="rephrase">Rephrase & Grammar</option>
                   <option value="technical">Technical</option>
                   <option value="academic">Academic</option>
@@ -196,6 +201,11 @@ const Home = () => {
                 type="submit"
                 className="optimize-button"
                 disabled={!inputValue.trim() || isLoading}
+                aria-label={isLoading 
+                  ? (context === 'rephrase' ? 'Correcting text...' : context === 'cursor_code_optimizer' ? 'Optimizing code prompt...' : 'Optimizing prompt...') 
+                  : (context === 'rephrase' ? 'Correct text' : context === 'cursor_code_optimizer' ? 'Optimize for Cursor' : 'Optimize prompt')
+                }
+                aria-describedby="button-help-text"
               >
                 {isLoading 
                   ? (context === 'rephrase' ? 'Correcting...' : context === 'cursor_code_optimizer' ? 'Optimizing Code...' : 'Optimizing...') 
@@ -209,50 +219,51 @@ const Home = () => {
         {/* Right Panel - Output */}
         <div className="right-panel">
           <div className="output-header">
-            <h2>{context === 'rephrase' ? 'Corrected Text' : context === 'cursor_code_optimizer' ? 'Cursor-Optimized Code Prompt' : 'Optimized Prompt'}</h2>
+            <h2 id="output-heading">{context === 'rephrase' ? 'Corrected Text' : context === 'cursor_code_optimizer' ? 'Cursor-Optimized Code Prompt' : 'Optimized Prompt'}</h2>
           </div>
           
           {isLoading ? (
-            <div className="prompt-output">
+            <div className="prompt-output" role="status" aria-live="polite" aria-label="Processing your request">
               <div className="skeleton" style={{ width: '55%' }}></div>
               <div className="skeleton" style={{ width: '85%', marginTop: 12 }}></div>
               <div className="skeleton" style={{ width: '75%', marginTop: 12 }}></div>
             </div>
           ) : latestMessage && latestMessage.type === 'assistant' && !latestMessage.isError ? (
-            <div className="prompt-output">
-              <div 
+            <div className="prompt-output" role="region" aria-labelledby="output-heading">
+              <button 
                 className="copy-button" 
                 onClick={() => copyToClipboard(latestMessage.optimized, 'top')}
+                aria-label={context === 'rephrase' ? 'Copy corrected text' : context === 'cursor_code_optimizer' ? 'Copy Cursor-optimized code prompt' : 'Copy optimized prompt'}
                 title={context === 'rephrase' ? 'Copy corrected text' : context === 'cursor_code_optimizer' ? 'Copy Cursor-optimized code prompt' : 'Copy optimized prompt'}
               >
                 📋
-              </div>
+              </button>
               
               <div className="prompt-sections">
-                <div className="prompt-section-display">
+                <div className="prompt-section-display" role="region" aria-labelledby="original-section">
                   <div className="section-header">
-                    <div className="section-icon">📝</div>
-                    <h3>{context === 'rephrase' ? 'Original Text' : context === 'cursor_code_optimizer' ? 'Original Code Request' : 'Original Prompt'}</h3>
+                    <div className="section-icon" aria-hidden="true">📝</div>
+                    <h3 id="original-section">{context === 'rephrase' ? 'Original Text' : context === 'cursor_code_optimizer' ? 'Original Code Request' : 'Original Prompt'}</h3>
                   </div>
                   <div className="section-content">
                     <p>{latestMessage.original}</p>
                   </div>
                 </div>
 
-                <div className="prompt-section-display">
+                <div className="prompt-section-display" role="region" aria-labelledby="strategy-section">
                   <div className="section-header">
-                    <div className="section-icon">🎯</div>
-                    <h3>{context === 'rephrase' ? 'Correction Strategy' : context === 'cursor_code_optimizer' ? 'Cursor Optimization Strategy' : 'Strategy Applied'}</h3>
+                    <div className="section-icon" aria-hidden="true">🎯</div>
+                    <h3 id="strategy-section">{context === 'rephrase' ? 'Correction Strategy' : context === 'cursor_code_optimizer' ? 'Cursor Optimization Strategy' : 'Strategy Applied'}</h3>
                   </div>
                   <div className="section-content">
                     <p>{latestMessage.strategy}</p>
                   </div>
                 </div>
 
-                <div className="prompt-section-display">
+                <div className="prompt-section-display" role="region" aria-labelledby="optimized-section">
                   <div className="section-header">
-                    <div className="section-icon">✨</div>
-                    <h3>{context === 'rephrase' ? 'Corrected Text' : context === 'cursor_code_optimizer' ? 'Cursor-Optimized Prompt' : 'Optimized Prompt'}</h3>
+                    <div className="section-icon" aria-hidden="true">✨</div>
+                    <h3 id="optimized-section">{context === 'rephrase' ? 'Corrected Text' : context === 'cursor_code_optimizer' ? 'Cursor-Optimized Prompt' : 'Optimized Prompt'}</h3>
                   </div>
                   <div className="section-content">
                     <p>{latestMessage.optimized}</p>
@@ -264,12 +275,13 @@ const Home = () => {
                 <button 
                   className="copy-btn" 
                   onClick={() => copyToClipboard(latestMessage.optimized, 'main')}
+                  aria-label={context === 'rephrase' ? 'Copy corrected text to clipboard' : context === 'cursor_code_optimizer' ? 'Copy Cursor-optimized prompt to clipboard' : 'Copy optimized prompt to clipboard'}
                 >
-                  <span className="btn-icon">📋</span>
+                  <span className="btn-icon" aria-hidden="true">📋</span>
                   {context === 'rephrase' ? 'Copy Corrected Text' : context === 'cursor_code_optimizer' ? 'Copy Cursor Prompt' : 'Copy Optimized'}
                 </button>
-                <button className="save-btn">
-                  <span className="btn-icon">⭐</span>
+                <button className="save-btn" aria-label="Save optimized prompt to library">
+                  <span className="btn-icon" aria-hidden="true">⭐</span>
                   Save to library
                 </button>
               </div>
@@ -281,6 +293,7 @@ const Home = () => {
                     setInputValue('');
                     setMessages([]);
                   }}
+                  aria-label="Start a new optimization"
                 >
                   Re-optimize &gt;
                 </button>
