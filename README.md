@@ -1,21 +1,22 @@
-# 🚀 Prompt Optimizer
+# 🤖 AI Prompt Engineer
 
-An AI-powered prompt optimization tool that intelligently selects and applies the best prompting strategies to make your prompts clearer, more concise, and highly effective for LLMs.
+An advanced AI-powered prompt engineering platform that intelligently selects and applies the best prompting strategies to transform your ideas into powerful, effective prompts for AI systems.
 
 ## ✨ Features
 
-- **Smart Strategy Selection**: Automatically identifies the best prompting strategy for your use case
-- **Prompt Cleaning**: Removes filler words and unnecessary phrases
-- **AI-Powered Optimization**: Uses GPT-4 to reformulate prompts for maximum effectiveness
-- **Chat-Based Interface**: Beautiful, responsive web UI with chat history
-- **Real-time Processing**: Instant prompt optimization with detailed feedback
+- **🧠 Enhanced Intent Analysis**: Deep understanding of user requirements and coding goals
+- **🚀 Cursor Code Optimizer**: Specialized optimization for Cursor AI development workflows
+- **🎯 Smart Strategy Selection**: Automatically identifies the best prompting strategy for your use case
+- **✨ AI-Powered Engineering**: Uses GPT-4 to transform ideas into comprehensive development prompts
+- **📱 Modern Interface**: Beautiful, responsive web UI with accessibility features
+- **⚡ Real-time Processing**: Instant prompt optimization with detailed feedback and analysis
 
 ## 🏗️ Architecture
 
-- **Frontend**: React.js with modern, responsive UI
-- **Backend**: Flask API with CORS support
+- **Frontend**: React.js with modern, responsive UI and accessibility features
+- **Backend**: Flask API with CORS support and enhanced cursor optimization
 - **AI Integration**: OpenAI GPT-4 + Pinecone vector database
-- **Strategy Database**: 5 pre-configured prompting strategies
+- **Enhanced Features**: Advanced intent analysis, comprehensive strategy selection, and detailed planning
 
 ## 🚀 Quick Start
 
@@ -80,18 +81,26 @@ The React app will open at `http://localhost:3000`
 ## 📱 Usage
 
 1. **Open the web interface** at `http://localhost:3000`
-2. **Type your prompt** in the input field
-3. **Click "🚀 Optimize"** or press Enter
-4. **View the optimized prompt** with detailed analysis
+2. **Select your context** (General, Cursor Code Optimizer, Rephrase, etc.)
+3. **Type your prompt or idea** in the input field
+4. **Click "🚀 Optimize"** or press Enter
+5. **View the enhanced prompt** with detailed analysis, intent understanding, and implementation guidance
 5. **Chat history** is automatically saved during your session
 
-## 🎯 Available Strategies
+## 🎯 Enhanced Capabilities
 
-1. **Few-shot prompting**: Provide examples before the query
-2. **Chain-of-thought**: Step-by-step reasoning
-3. **Zero-shot prompting**: Direct queries without examples
-4. **Role prompting**: Assign specific roles to the AI
-5. **Self-consistency**: Multiple reasoning paths
+### 🚀 Cursor Code Optimizer
+- **Intent Analysis**: Automatically detects user goals (new features, debugging, refactoring)
+- **Technology Recognition**: Identifies mentioned technologies and frameworks
+- **Comprehensive Planning**: Generates detailed implementation roadmaps
+- **Strategy Selection**: Chooses optimal approach based on complexity and context
+
+### 📝 General Optimization
+- **Few-shot prompting**: Provide examples before the query
+- **Chain-of-thought**: Step-by-step reasoning
+- **Zero-shot prompting**: Direct queries without examples
+- **Role prompting**: Assign specific roles to the AI
+- **Self-consistency**: Multiple reasoning paths
 
 ## 🛠️ Development
 

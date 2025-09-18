@@ -14,3 +14,4 @@ node_modules/
 .vscode/
 public/
 /build
+prompt.txt

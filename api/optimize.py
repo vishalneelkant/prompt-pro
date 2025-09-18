@@ -397,20 +397,6 @@ ENHANCED CURSOR CODE OPTIMIZATION FRAMEWORK:
 - Security best practices
 - Accessibility considerations (if applicable)
 
-## 10. RISK MITIGATION & CONTINGENCY PLANNING
-- Identify potential technical risks and blockers
-- Provide specific mitigation strategies for each risk
-- Include troubleshooting guides for common issues
-- Define rollback procedures if needed
-- Suggest monitoring and alerting strategies
-
-## 11. POST-IMPLEMENTATION CONSIDERATIONS
-- Deployment strategy and environment setup
-- Monitoring and maintenance procedures
-- Future enhancement opportunities
-- Documentation and knowledge transfer
-- Performance metrics and success measurement
-
 ORIGINAL CODE REQUEST: {cleaned_prompt}
 
 Create a comprehensive, actionable development prompt optimized for Cursor AI that transforms this request into a structured, step-by-step implementation guide. The output should be so detailed and well-structured that any developer can follow it successfully with Cursor AI assistance, regardless of their experience level. Focus on clarity, practicality, maintainability, and optimal Cursor AI interaction patterns."""
@@ -511,10 +497,6 @@ def apply_strategy(user_prompt: str, context: str = "general"):
 11. **Documentation**: Generate clear documentation with AI enhancement
 12. **Performance Check**: Validate performance and optimize if needed
 
-### Phase 4: Deployment Preparation (30 minutes)
-13. **Deployment Setup**: Configure deployment pipeline and environment
-14. **Monitoring**: Set up basic monitoring and logging
-15. **Final Validation**: Perform end-to-end testing and validation
 
 ## Cursor AI Optimization Guidelines
 - **Use Specific Prompts**: Be explicit about requirements and expected outputs
